@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LED Display Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Syne:wght@700;800&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="db-pill" class="db-pill"><span class="db-dot"></span><span id="db-label">Checking DB...</span></div>
+
+  <div id="p1" class="page active">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="1">Home</button>
+      <div class="top-title">LED Display Generator</div>
+      <div class="step-dots">
+        <span class="sdot active"></span>
+        <span class="sdot"></span>
+        <span class="sdot"></span>
+      </div>
+    </div>
+    <div class="scroller max-w">
+      <div class="home-icon">LED</div>
+      <h1 class="home-title">Create your <em>LED board</em> quickly</h1>
+      <p class="home-sub">Build text, image or URL board previews, save to the database, and export ready-to-run HTML.</p>
+      <button type="button" class="home-cta" data-action="start-new">+ Create New Board</button>
+      <section class="home-saved">
+        <div class="sec-label">Recent boards</div>
+        <div id="saved-list" class="saved-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="p2" class="page">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="1">Back</button>
+      <div class="top-title">Board Content</div>
+      <div class="step-dots">
+        <span class="sdot done"></span>
+        <span class="sdot active"></span>
+        <span class="sdot"></span>
+      </div>
+    </div>
+    <div class="scroller max-w">
+      <div class="content-type-toggle">
+        <button type="button" id="btn-text" class="content-btn active" data-action="set-content-type" data-content-type="text">Text</button>
+        <button type="button" id="btn-image" class="content-btn" data-action="set-content-type" data-content-type="image">Image</button>
+        <button type="button" id="btn-url" class="content-btn" data-action="set-content-type" data-content-type="url">URL</button>
+      </div>
+      <div id="text-inputs">
+        <div class="sec-label">Text lines</div>
+        <div id="lines-list" class="lines-list"></div>
+        <button type="button" class="add-line-btn" data-action="add-line">+ Add Line</button>
+      </div>
+      <div id="image-inputs" style="display:none; margin-top:22px;">
+        <div class="sec-label">Upload image</div>
+        <input id="image-upload" class="cinput" type="file" accept="image/png,image/jpeg">
+        <div id="image-name" class="muted">No image selected.</div>
+        <div id="image-preview" class="muted">Select a PNG or JPG to preview on the board.</div>
+      </div>
+      <div id="url-inputs" style="display:none; margin-top:22px;">
+        <div class="sec-label">Image URL</div>
+        <input id="image-url" class="cinput" type="text" placeholder="Paste image URL here">
+        <div id="image-preview-url" class="muted">The board preview updates as soon as the URL is entered.</div>
+      </div>
+    </div>
+    <div class="nav-foot">
+      <button type="button" class="prv" data-action="go" data-page="1">Back</button>
+      <button type="button" class="nxt" data-action="go-to-style">Next: Style →</button>
+    </div>
+  </div>
+
+  <div id="p3" class="page">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="2">Back</button>
+      <div class="top-title">Board Style</div>
+      <div class="step-dots">
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+        <span class="sdot active"></span>
+      </div>
+    </div>
+    <div class="scroller max-w">
+      <div id="style-blocks" class="style-blocks"></div>
+    </div>
+    <div class="nav-foot">
+      <button type="button" class="prv" data-action="go" data-page="2">Back</button>
+      <button type="button" class="nxt" data-action="go" data-page="4">Next: Size →</button>
+    </div>
+  </div>
+
+  <div id="p4" class="page">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="3">Back</button>
+      <div class="top-title">Board Size & Pitch</div>
+      <div class="step-dots">
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+      </div>
+    </div>
+    <div class="scroller max-w">
+      <div class="size-card">
+        <div class="card-title">Board size (feet)</div>
+        <div class="size-grid">
+          <input id="sw" class="cinput" type="number" min="1" step="0.1" value="6">
+          <div class="size-x">×</div>
+          <input id="sh" class="cinput" type="number" min="0.5" step="0.1" value="1">
+        </div>
+        <div id="pixel-count-note" class="size-note">Board pixel count updates as you choose pitch and size.</div>
+      </div>
+
+      <div class="pitch-card">
+        <div class="card-title">Size presets</div>
+        <div class="presets-row" id="size-presets" style="justify-content: center;"></div>
+      </div>
+
+      <div class="pitch-card">
+        <div class="card-subtitle">Indoor LED</div>
+        <div id="indoor-pitch-grid" class="pitch-grid"></div>
+      </div>
+
+      <div class="pitch-card">
+        <div class="card-subtitle">Outdoor LED</div>
+        <div id="outdoor-pitch-grid" class="pitch-grid"></div>
+      </div>
+
+      <div class="pitch-card" id="layout-card">
+        <div class="card-title">Content Layout Controls</div>
+        <div class="layout-grid">
+          <label class="layout-label">X Position
+            <div class="layout-row"><span>-100</span><input id="layout-posX" class="layout-input" name="posX" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
+            <div class="layout-value" id="layout-posX-value">0</div>
+          </label>
+          <label class="layout-label">Y Position
+            <div class="layout-row"><span>-100</span><input id="layout-posY" class="layout-input" name="posY" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
+            <div class="layout-value" id="layout-posY-value">0</div>
+          </label>
+          <label class="layout-label">Width Scale
+            <div class="layout-row"><span>0.2</span><input id="layout-scaleX" class="layout-input" name="scaleX" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
+            <div class="layout-value" id="layout-scaleX-value">1.00</div>
+          </label>
+          <label class="layout-label">Height Scale
+            <div class="layout-row"><span>0.2</span><input id="layout-scaleY" class="layout-input" name="scaleY" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
+            <div class="layout-value" id="layout-scaleY-value">1.00</div>
+          </label>
+          <div class="layout-actions">
+            <button type="button" class="pset" data-action="fit-width">Fit to Width</button>
+            <button type="button" class="pset" data-action="fit-height">Fit to Height</button>
+            <button type="button" class="pset" data-action="fit-board">Fit to Board</button>
+            <button type="button" class="pset" data-action="reset-layout">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-foot">
+      <button type="button" class="prv" data-action="go" data-page="3">Back</button>
+      <button type="button" class="nxt" data-action="go" data-page="5">Preview →</button>
+    </div>
+  </div>
+
+  <div id="p5" class="page">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="4">Back</button>
+      <div class="top-title">Board Preview</div>
+      <div class="step-dots">
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+      </div>
+    </div>
+    <div class="prev-toolbar">
+      <span id="size-tag" class="size-tag">6 × 1 ft</span>
+      <span id="pitch-tag" class="pitch-tag">P10</span>
+      <span id="pixel-info" class="pixel-info">32 × 16 px</span>
+    </div>
+    <div id="stage" class="stage">
+      <div class="stage-hint">Live preview</div>
+      <div id="board-wrap" class="board-wrap">
+        <canvas id="board-canvas" class="board-canvas"></canvas>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button type="button" class="pbtn primary" data-action="download-html" title="Download HTML file">⬇️ Download HTML</button>
+      <button type="button" class="pbtn" data-action="save-and-gen" title="Save & Get shareable URL">💾 Save & Generate</button>
+    </div>
+    <div id="result-bar" class="result-bar">
+      <span class="res-label">Shareable board URL</span>
+      <div id="url-show" class="url-show"></div>
+      <button type="button" id="copy-btn" class="copy-btn" data-action="copy-url">Copy</button>
+      <a id="open-link" class="open-link" target="_blank" rel="noreferrer">Open</a>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay">
+    <div class="spinner"></div>
+    <div id="ov-text" class="ov-text">Working...</div>
+  </div>
+
+  <script defer src="app.js"></script>
+</body>
+</html>
