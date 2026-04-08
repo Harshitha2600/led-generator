@@ -18,6 +18,7 @@
         <span class="sdot active"></span>
         <span class="sdot"></span>
         <span class="sdot"></span>
+        <span class="sdot"></span>
       </div>
     </div>
     <div class="scroller max-w">
@@ -39,6 +40,7 @@
       <div class="step-dots">
         <span class="sdot done"></span>
         <span class="sdot active"></span>
+        <span class="sdot"></span>
         <span class="sdot"></span>
       </div>
     </div>
@@ -79,6 +81,7 @@
         <span class="sdot done"></span>
         <span class="sdot done"></span>
         <span class="sdot active"></span>
+        <span class="sdot"></span>
       </div>
     </div>
     <div class="scroller max-w">
@@ -98,6 +101,7 @@
         <span class="sdot done"></span>
         <span class="sdot done"></span>
         <span class="sdot done"></span>
+        <span class="sdot"></span>
       </div>
     </div>
     <div class="scroller max-w">
@@ -125,46 +129,78 @@
         <div class="card-subtitle">Outdoor LED</div>
         <div id="outdoor-pitch-grid" class="pitch-grid"></div>
       </div>
-
-      <div class="pitch-card" id="layout-card">
-        <div class="card-title">Content Layout Controls</div>
-        <div class="layout-grid">
-          <label class="layout-label">X Position
-            <div class="layout-row"><span>-100</span><input id="layout-posX" class="layout-input" name="posX" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
-            <div class="layout-value" id="layout-posX-value">0</div>
-          </label>
-          <label class="layout-label">Y Position
-            <div class="layout-row"><span>-100</span><input id="layout-posY" class="layout-input" name="posY" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
-            <div class="layout-value" id="layout-posY-value">0</div>
-          </label>
-          <label class="layout-label">Width Scale
-            <div class="layout-row"><span>0.2</span><input id="layout-scaleX" class="layout-input" name="scaleX" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
-            <div class="layout-value" id="layout-scaleX-value">1.00</div>
-          </label>
-          <label class="layout-label">Height Scale
-            <div class="layout-row"><span>0.2</span><input id="layout-scaleY" class="layout-input" name="scaleY" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
-            <div class="layout-value" id="layout-scaleY-value">1.00</div>
-          </label>
-          <div class="layout-actions">
-            <button type="button" class="pset" data-action="fit-width">Fit to Width</button>
-            <button type="button" class="pset" data-action="fit-height">Fit to Height</button>
-            <button type="button" class="pset" data-action="fit-board">Fit to Board</button>
-            <button type="button" class="pset" data-action="reset-layout">Reset</button>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="3">Back</button>
-      <button type="button" class="nxt" data-action="go" data-page="5">Preview →</button>
+      <button type="button" class="nxt" data-action="go" data-page="5">Next →</button>
     </div>
   </div>
 
   <div id="p5" class="page">
     <div class="top-bar">
       <button type="button" class="back-btn" data-action="go" data-page="4">Back</button>
+      <div class="top-title">Content Layout</div>
+      <div class="step-dots">
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+        <span class="sdot done"></span>
+        <span class="sdot active"></span>
+      </div>
+    </div>
+    <div class="layout-container">
+      <div class="layout-section-controls">
+        <div class="card-title">Layout Controls</div>
+        <div id="layout-controls-panel" style="display:none;">
+          <div class="layout-grid">
+            <label class="layout-label">X Position
+              <div class="layout-row"><span>-100</span><input id="layout-live-posX" class="layout-input" name="posX" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
+              <div class="layout-value" id="layout-live-posX-value">0</div>
+            </label>
+            <label class="layout-label">Y Position
+              <div class="layout-row"><span>-100</span><input id="layout-live-posY" class="layout-input" name="posY" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
+              <div class="layout-value" id="layout-live-posY-value">0</div>
+            </label>
+            <label class="layout-label">Width Scale
+              <div class="layout-row"><span>0.2</span><input id="layout-live-scaleX" class="layout-input" name="scaleX" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
+              <div class="layout-value" id="layout-live-scaleX-value">1.00</div>
+            </label>
+            <label class="layout-label">Height Scale
+              <div class="layout-row"><span>0.2</span><input id="layout-live-scaleY" class="layout-input" name="scaleY" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
+              <div class="layout-value" id="layout-live-scaleY-value">1.00</div>
+            </label>
+            <div class="layout-actions">
+              <button type="button" class="pset" data-action="fit-width">Fit Width</button>
+              <button type="button" class="pset" data-action="fit-height">Fit Height</button>
+              <button type="button" class="pset" data-action="fit-board">Fit Board</button>
+              <button type="button" class="pset" data-action="reset-layout">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div id="layout-image-notice" style="display:none; text-align:center; color:var(--muted2); padding: 20px 0;">
+          <p style="font-size: .9rem; margin-bottom: 8px;">Image content is automatically<br>centered and scaled to fit the board.</p>
+          <p style="font-size: .8rem; color: var(--muted);">No manual adjustments needed.</p>
+        </div>
+      </div>
+      <div class="layout-section-preview">
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div style="font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em;">Live Preview</div>
+          <canvas id="layout-live-canvas" class="layout-live-canvas"></canvas>
+          <div id="layout-preview-info" style="font-size:.75rem; color:var(--muted2); text-align:center;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-foot">
+      <button type="button" class="prv" data-action="go" data-page="4">Back</button>
+      <button type="button" class="nxt" data-action="go" data-page="6">Preview →</button>
+    </div>
+  </div>
+
+  <div id="p6" class="page">
+    <div class="top-bar">
+      <button type="button" class="back-btn" data-action="go" data-page="5">Back</button>
       <div class="top-title">Board Preview</div>
       <div class="step-dots">
+        <span class="sdot done"></span>
         <span class="sdot done"></span>
         <span class="sdot done"></span>
         <span class="sdot done"></span>

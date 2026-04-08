@@ -58,15 +58,6 @@ const cacheElements = () => {
   elements.sw = document.getElementById('sw');
   elements.sh = document.getElementById('sh');
   elements.pixelNote = document.getElementById('pixel-count-note');
-  elements.layoutCard = document.getElementById('layout-card');
-  elements.layoutPosX = document.getElementById('layout-posX');
-  elements.layoutPosY = document.getElementById('layout-posY');
-  elements.layoutScaleX = document.getElementById('layout-scaleX');
-  elements.layoutScaleY = document.getElementById('layout-scaleY');
-  elements.layoutPosXVal = document.getElementById('layout-posX-value');
-  elements.layoutPosYVal = document.getElementById('layout-posY-value');
-  elements.layoutScaleXVal = document.getElementById('layout-scaleX-value');
-  elements.layoutScaleYVal = document.getElementById('layout-scaleY-value');
   elements.stage = document.getElementById('stage');
   elements.boardWrap = document.getElementById('board-wrap');
   elements.boardCanvas = document.getElementById('board-canvas');
@@ -78,6 +69,18 @@ const cacheElements = () => {
   elements.urlShow = document.getElementById('url-show');
   elements.openLink = document.getElementById('open-link');
   elements.overlay = document.getElementById('overlay');
+  elements.layoutControlsPanel = document.getElementById('layout-controls-panel');
+  elements.layoutImageNotice = document.getElementById('layout-image-notice');
+  elements.layoutLiveCanvas = document.getElementById('layout-live-canvas');
+  elements.layoutLivePosX = document.getElementById('layout-live-posX');
+  elements.layoutLivePosY = document.getElementById('layout-live-posY');
+  elements.layoutLiveScaleX = document.getElementById('layout-live-scaleX');
+  elements.layoutLiveScaleY = document.getElementById('layout-live-scaleY');
+  elements.layoutLivePosXVal = document.getElementById('layout-live-posX-value');
+  elements.layoutLivePosYVal = document.getElementById('layout-live-posY-value');
+  elements.layoutLiveScaleXVal = document.getElementById('layout-live-scaleX-value');
+  elements.layoutLiveScaleYVal = document.getElementById('layout-live-scaleY-value');
+  elements.layoutPreviewInfo = document.getElementById('layout-preview-info');
   elements.ovText = document.getElementById('ov-text');
   elements.resultBar = document.getElementById('result-bar');
   elements.copyBtn = document.getElementById('copy-btn');
@@ -88,7 +91,11 @@ const showPage = (pageNumber) => {
   const target = document.getElementById(`p${pageNumber}`);
   if (target) target.classList.add('active');
   if (pageNumber === 1) loadRecent();
-  if (pageNumber === 5) renderPreview();
+  if (pageNumber === 5) {
+    updateLayoutUI();
+    renderLayoutLivePreview();
+  }
+  if (pageNumber === 6) renderPreview();
 };
 
 const setPill = (ok) => {
@@ -160,7 +167,10 @@ const setContentType = (type) => {
   document.getElementById('text-inputs').style.display = type === 'text' ? 'block' : 'none';
   document.getElementById('image-inputs').style.display = type === 'image' ? 'block' : 'none';
   document.getElementById('url-inputs').style.display = type === 'url' ? 'block' : 'none';
-  if (elements.layoutCard) elements.layoutCard.style.display = type === 'text' ? 'block' : 'none';
+  
+  if (elements.layoutControlsPanel) elements.layoutControlsPanel.style.display = type === 'text' ? 'block' : 'none';
+  if (elements.layoutImageNotice) elements.layoutImageNotice.style.display = type === 'text' ? 'none' : 'block';
+  
   livePreview();
 };
 
@@ -348,14 +358,14 @@ const updatePixelNote = () => {
 };
 
 const updateLayoutUI = () => {
-  if (elements.layoutPosXVal) elements.layoutPosXVal.textContent = layout.posX.toString();
-  if (elements.layoutPosYVal) elements.layoutPosYVal.textContent = layout.posY.toString();
-  if (elements.layoutScaleXVal) elements.layoutScaleXVal.textContent = layout.scaleX.toFixed(2);
-  if (elements.layoutScaleYVal) elements.layoutScaleYVal.textContent = layout.scaleY.toFixed(2);
-  if (elements.layoutPosX) elements.layoutPosX.value = layout.posX.toString();
-  if (elements.layoutPosY) elements.layoutPosY.value = layout.posY.toString();
-  if (elements.layoutScaleX) elements.layoutScaleX.value = layout.scaleX.toString();
-  if (elements.layoutScaleY) elements.layoutScaleY.value = layout.scaleY.toString();
+  if (elements.layoutLivePosXVal) elements.layoutLivePosXVal.textContent = layout.posX.toString();
+  if (elements.layoutLivePosYVal) elements.layoutLivePosYVal.textContent = layout.posY.toString();
+  if (elements.layoutLiveScaleXVal) elements.layoutLiveScaleXVal.textContent = layout.scaleX.toFixed(2);
+  if (elements.layoutLiveScaleYVal) elements.layoutLiveScaleYVal.textContent = layout.scaleY.toFixed(2);
+  if (elements.layoutLivePosX) elements.layoutLivePosX.value = layout.posX.toString();
+  if (elements.layoutLivePosY) elements.layoutLivePosY.value = layout.posY.toString();
+  if (elements.layoutLiveScaleX) elements.layoutLiveScaleX.value = layout.scaleX.toString();
+  if (elements.layoutLiveScaleY) elements.layoutLiveScaleY.value = layout.scaleY.toString();
 };
 
 const handleLayoutInput = (event) => {
@@ -630,6 +640,53 @@ const renderPreview = () => {
   ctx.restore();
 };
 
+const renderLayoutLivePreview = () => {
+  const canvas = elements.layoutLiveCanvas;
+  if (!canvas) return;
+
+  const W = parseFloat(elements.sw?.value) || 6;
+  const H = parseFloat(elements.sh?.value) || 1;
+  const pitch = state.selectedPitch;
+  if (!pitch || !pitch.pixels) return;
+
+  canvas.width = 400;
+  canvas.height = canvas.width * (H / W);
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (elements.layoutPreviewInfo) {
+    elements.layoutPreviewInfo.textContent = `${W}×${H} ft · ${pitch.code} · ${pitch.pixels.w}×${pitch.pixels.h} px`;
+  }
+
+  if (state.contentType === 'image') {
+    if (state.imageFile) renderImagePreview(canvas, ctx, state.imageFile);
+    else showPlaceholder(ctx, 'Select image');
+    return;
+  }
+
+  if (state.contentType === 'url') {
+    if (state.imageURL.trim()) renderImagePreview(canvas, ctx, state.imageURL);
+    else showPlaceholder(ctx, 'Enter URL');
+    return;
+  }
+
+  const activeLines = state.lines.filter(line => line.text.trim());
+  if (!activeLines.length) {
+    showPlaceholder(ctx, 'Add text');
+    return;
+  }
+
+  ctx.save();
+  ctx.translate(canvas.width / 2 + layout.posX, canvas.height / 2 + layout.posY);
+  ctx.scale(layout.scaleX, layout.scaleY);
+  renderTextCanvas(canvas, ctx, true);
+  ctx.restore();
+};
+
 const showPlaceholder = (ctx, message) => {
   ctx.fillStyle = 'rgba(255,255,255,0.2)';
   ctx.font = '1rem sans-serif';
@@ -702,6 +759,9 @@ const renderImagePreview = (canvas, ctx, source) => {
 const livePreview = () => {
   updatePixelNote();
   if (document.getElementById('p5')?.classList.contains('active')) {
+    renderLayoutLivePreview();
+  }
+  if (document.getElementById('p6')?.classList.contains('active')) {
     renderPreview();
   }
 };
@@ -981,7 +1041,7 @@ const init = () => {
   elements.styleBlocks?.addEventListener('input', handleStyleInput);
   elements.imageUpload?.addEventListener('change', handleImageChange);
   elements.imageUrl?.addEventListener('input', (event) => handleURLChange(event.target.value));
-  elements.layoutCard?.addEventListener('input', handleLayoutInput);
+  elements.layoutControlsPanel?.addEventListener('input', handleLayoutInput);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && document.activeElement?.matches('#image-url')) {
       event.stopPropagation();
@@ -989,6 +1049,9 @@ const init = () => {
   });
   window.addEventListener('resize', () => {
     if (document.getElementById('p5')?.classList.contains('active')) {
+      renderLayoutLivePreview();
+    }
+    if (document.getElementById('p6')?.classList.contains('active')) {
       renderPreview();
     }
   });

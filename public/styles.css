@@ -181,4 +181,110 @@ button, input, select, textarea { font-family:inherit; }
 .prv { padding:12px 22px; border:1.5px solid var(--border2); border-radius:10px; background:transparent; color:var(--muted2); font-size:.88rem; cursor:pointer; transition:all .18s; }
 .prv:hover { border-color:var(--muted2); color:var(--text); }
 
-@media(max-width:500px){ .ctrl-row,.ctrl-row3{grid-template-columns:1fr} .size-grid{grid-template-columns:1fr 24px 1fr} }
+/* LAYOUT PAGE (P5) */
+#p5 { display:none; flex-direction:column; min-height:100vh; position:static; background:var(--bg); }
+#p5.active { display:flex; }
+.layout-container { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:28px; padding:28px 24px; }.layout-section-controls { background:var(--s2); border:1px solid var(--border); border-radius:14px; padding:22px; display:flex; flex-direction:column; gap:16px; }
+.layout-section-preview { background:var(--s2); border:1px solid var(--border); border-radius:14px; padding:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.layout-live-canvas { width:100%; max-width:400px; aspect-ratio:16/9; border:2px solid var(--border); border-radius:10px; background:#000; display:block; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+
+/* RESPONSIVE DESIGN */
+@media(max-width:900px) {
+  .layout-container { grid-template-columns:1fr; gap:20px; }
+  .layout-section-preview { min-height:300px; }
+}
+
+@media(max-width:768px) {
+  html { font-size:15px; }
+  .top-bar { padding:12px 16px; gap:10px; }
+  .back-btn { padding:6px 12px; font-size:.75rem; }
+  .top-title { font-size:.95rem; }
+  .scroller { padding:20px 16px; }
+  .max-w { max-width:100%; padding:0; }
+  .pitch-grid { grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:6px; }
+  .size-grid { grid-template-columns:1fr 24px 1fr; gap:10px; }
+  .ctrl-row,.ctrl-row3 { grid-template-columns:1fr; }
+  .content-type-toggle { gap:8px; }
+  .content-btn { padding:9px 16px; font-size:.82rem; }
+  .nav-foot { padding:16px 16px; gap:8px; }
+  .prv, .nxt { padding:10px 18px; font-size:.82rem; }
+  .home-title { font-size:clamp(1.6rem,5vw,2.4rem); }
+  .home-cta { padding:14px 28px; font-size:.9rem; }
+  #p1 { padding:30px 16px; }
+  #p1 .home-saved { max-width:100%; }
+  .action-bar { flex-direction:column; }
+  .pbtn { width:100%; justify-content:center; }
+  .result-bar { flex-direction:column; gap:10px; }
+  .res-label { width:100%; }
+  .url-show { width:100%; }
+  .layout-container { padding:20px 16px; }
+  .layout-section-controls, .layout-section-preview { padding:18px; }
+  .layout-live-canvas { max-width:100%; }
+}
+
+@media(max-width:480px) {
+  html { font-size:14px; }
+  .top-bar { padding:10px 12px; flex-wrap:wrap; }
+  .step-dots { margin-left:auto; order:3; }
+  .top-title { font-size:.9rem; flex:1; }
+  .back-btn { padding:5px 10px; font-size:.7rem; }
+  .scroller { padding:16px 12px; }
+  .home-icon { font-size:2.5rem; }
+  .home-title { font-size:clamp(1.4rem,4vw,1.8rem); margin-bottom:8px; }
+  .home-sub { font-size:.8rem; margin-bottom:28px; }
+  .home-cta { padding:12px 20px; font-size:.8rem; width:100%; }
+  .home-saved { margin-top:32px; }
+  .saved-row { padding:10px 12px; }
+  .saved-slug { font-size:.75rem; }
+  .saved-info { font-size:.7rem; }
+  .lines-list { gap:8px; }
+  .line-card { padding:10px 12px; gap:8px; }
+  .line-num { width:20px; height:20px; font-size:.6rem; }
+  .line-input { font-size:.95rem; min-height:36px; }
+  .add-line-btn { padding:10px; font-size:.8rem; }
+  .content-type-toggle { gap:6px; margin-bottom:16px; }
+  .content-btn { padding:8px 14px; font-size:.75rem; }
+  .sblock-head { padding:10px 12px; }
+  .sblock-body { padding:12px; gap:10px; }
+  .ctrl { gap:4px; }
+  .ctrl-label { font-size:.6rem; }
+  .ctrl-row, .ctrl-row3 { grid-template-columns:1fr; gap:10px; }
+  .cinput, .cselect { padding:7px 10px; font-size:.8rem; }
+  .cp { width:20px; height:20px; }
+  .cswatch { width:30px; height:30px; }
+  .tog { padding:5px 12px; font-size:.75rem; }
+  .aln { padding:6px; font-size:.85rem; }
+  .aligns { gap:4px; }
+  .size-card, .pitch-card { padding:16px; margin-bottom:12px; }
+  .card-title { font-size:.65rem; margin-bottom:12px; }
+  .card-subtitle { font-size:.8rem; margin-bottom:10px; }
+  .size-grid { gap:8px; }
+  .size-note { font-size:.7rem; margin-top:8px; }
+  .presets-row { gap:5px; }
+  .pset { padding:6px 11px; font-size:.65rem; }
+  .pitch-code { font-size:.85rem; }
+  .pitch-mm { font-size:.6rem; }
+  .pitch-use { font-size:.55rem; }
+  .pitch-res { font-size:.55rem; }
+  .layout-input { accent-color:var(--accent); }
+  .layout-row span { font-size:.7rem; }
+  .layout-value { font-size:.7rem; }
+  .layout-actions { gap:8px; }
+  .layout-actions .pset { padding:8px 10px; font-size:.75rem; }
+  .nav-foot { padding:12px; gap:6px; }
+  .prv, .nxt { padding:9px 14px; font-size:.75rem; }
+  .prev-toolbar { padding:10px 12px; gap:8px; font-size:.65rem; }
+  .size-tag, .pitch-tag, .pixel-info { font-size:.65rem; padding:2px 6px; }
+  .pbtn { padding:8px 12px; font-size:.73rem; }
+  .action-bar { padding:12px; }
+  .layout-container { padding:16px 12px; gap:16px; }
+  .layout-section-controls, .layout-section-preview { padding:14px; }
+  .layout-live-canvas { max-width:100%; }
+  .board-row { padding:12px; gap:10px; }
+  .br-slug { font-size:.75rem; }
+  .br-meta { font-size:.65rem; }
+  .view-all-btn { padding:9px; font-size:.75rem; }
+  .brbtn { padding:4px 10px; font-size:.65rem; }
+  .overlay { gap:14px; }
+  .ov-text { font-size:.75rem; }
+}
