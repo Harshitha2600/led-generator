@@ -69,7 +69,7 @@
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="1">Back</button>
-      <button type="button" class="nxt" data-action="go-to-style">Next: Style →</button>
+      <button type="button" class="nxt" data-action="go-to-style">Next: Style -></button>
     </div>
   </div>
 
@@ -89,7 +89,7 @@
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="2">Back</button>
-      <button type="button" class="nxt" data-action="go" data-page="4">Next: Size →</button>
+      <button type="button" class="nxt" data-action="go" data-page="4">Next: Size -></button>
     </div>
   </div>
 
@@ -109,7 +109,7 @@
         <div class="card-title">Board size (feet)</div>
         <div class="size-grid">
           <input id="sw" class="cinput" type="number" min="1" step="0.1" value="6">
-          <div class="size-x">×</div>
+          <div class="size-x">x</div>
           <input id="sh" class="cinput" type="number" min="0.5" step="0.1" value="1">
         </div>
         <div id="pixel-count-note" class="size-note">Board pixel count updates as you choose pitch and size.</div>
@@ -132,7 +132,7 @@
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="3">Back</button>
-      <button type="button" class="nxt" data-action="go" data-page="5">Next →</button>
+      <button type="button" class="nxt" data-action="go" data-page="5">Next -></button>
     </div>
   </div>
 
@@ -147,8 +147,8 @@
         <span class="sdot active"></span>
       </div>
     </div>
-    <div class="layout-container">
-      <div class="layout-section-controls">
+    <div class="layout-container layout-page">
+      <div class="layout-section-controls controls controls">
         <div class="card-title">Layout Controls</div>
         <div id="layout-controls-panel" style="display:none;">
           <div class="layout-grid">
@@ -181,7 +181,7 @@
           <p style="font-size: .8rem; color: var(--muted);">No manual adjustments needed.</p>
         </div>
       </div>
-      <div class="layout-section-preview">
+      <div class="layout-section-preview preview preview">
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">
           <div style="font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em;">Live Preview</div>
           <canvas id="layout-live-canvas" class="layout-live-canvas"></canvas>
@@ -191,7 +191,7 @@
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="4">Back</button>
-      <button type="button" class="nxt" data-action="go" data-page="6">Preview →</button>
+      <button type="button" class="nxt" data-action="go" data-page="6">Preview -></button>
     </div>
   </div>
 
@@ -207,9 +207,9 @@
       </div>
     </div>
     <div class="prev-toolbar">
-      <span id="size-tag" class="size-tag">6 × 1 ft</span>
+      <span id="size-tag" class="size-tag">6 x 1 ft</span>
       <span id="pitch-tag" class="pitch-tag">P10</span>
-      <span id="pixel-info" class="pixel-info">32 × 16 px</span>
+      <span id="pixel-info" class="pixel-info">32 x 16 px</span>
     </div>
     <div id="stage" class="stage">
       <div class="stage-hint">Live preview</div>
@@ -218,8 +218,8 @@
       </div>
     </div>
     <div class="action-bar">
-      <button type="button" class="pbtn primary" data-action="download-html" title="Download HTML file">⬇️ Download HTML</button>
-      <button type="button" class="pbtn" data-action="save-and-gen" title="Save & Get shareable URL">💾 Save & Generate</button>
+      <button type="button" class="pbtn primary" data-action="download-html" title="Download HTML file">Download HTML</button>
+      <button type="button" class="pbtn" data-action="save-and-gen" title="Save & Get shareable URL">Save & Generate</button>
     </div>
     <div id="result-bar" class="result-bar">
       <span class="res-label">Shareable board URL</span>
@@ -234,6 +234,6 @@
     <div id="ov-text" class="ov-text">Working...</div>
   </div>
 
-  <script defer src="app.js"></script>
+  <script defer src="/app.js?v=5"></script>
 </body>
 </html>

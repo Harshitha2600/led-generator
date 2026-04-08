@@ -92,8 +92,11 @@ const showPage = (pageNumber) => {
   if (target) target.classList.add('active');
   if (pageNumber === 1) loadRecent();
   if (pageNumber === 5) {
+    console.log('Layout page opened');
     updateLayoutUI();
-    renderLayoutLivePreview();
+    setTimeout(() => {
+      renderLayoutLivePreview();
+    }, 100);
   }
   if (pageNumber === 6) renderPreview();
 };
@@ -101,7 +104,7 @@ const showPage = (pageNumber) => {
 const setPill = (ok) => {
   if (!elements.dbPill || !elements.dbLabel) return;
   elements.dbPill.className = `db-pill ${ok ? 'ok' : 'err'}`;
-  elements.dbLabel.textContent = ok ? 'MongoDB ✓' : 'DB offline';
+  elements.dbLabel.textContent = ok ? 'MongoDB OK' : 'DB offline';
 };
 
 const checkDB = async () => {
@@ -213,7 +216,7 @@ const renderLines = () => {
     card.innerHTML = `
       <div class="line-num">${index + 1}</div>
       <textarea class="line-input" data-line-id="${line.id}" rows="2" placeholder="Line ${index + 1} text...">${line.text}</textarea>
-      ${state.lines.length > 1 ? `<button type="button" class="line-del" data-action="remove-line" data-line-id="${line.id}" title="Remove">×</button>` : ''}
+      ${state.lines.length > 1 ? `<button type="button" class="line-del" data-action="remove-line" data-line-id="${line.id}" title="Remove">x</button>` : ''}
     `;
     elements.linesList.appendChild(card);
   });
@@ -287,7 +290,7 @@ const buildPitchGrid = () => {
       <span class="pitch-code">${code}</span>
       <span class="pitch-mm">${config.mm}mm</span>
       <span class="pitch-use">Indoor</span>
-      <span class="pitch-res">${config.pixels.w} × ${config.pixels.h} px</span>
+      <span class="pitch-res">${config.pixels.w} x ${config.pixels.h} px</span>
     </button>
   `).join('');
   }
@@ -299,7 +302,7 @@ const buildPitchGrid = () => {
       <span class="pitch-code">${code}</span>
       <span class="pitch-mm">${config.mm}mm</span>
       <span class="pitch-use">Outdoor</span>
-      <span class="pitch-res">${config.pixels.w} × ${config.pixels.h} px</span>
+      <span class="pitch-res">${config.pixels.w} x ${config.pixels.h} px</span>
     </button>
   `).join('');
   }
@@ -310,12 +313,12 @@ const buildPitchGrid = () => {
 const buildSizePresets = () => {
   if (!elements.sizePresets) return;
   const presets = [
-    { label: '4×0.5 ft\nName board', data: { w: 4, h: 0.5 } },
-    { label: '6×1 ft\nBanner', data: { w: 6, h: 1 } },
-    { label: '10×2 ft\nStorefront', data: { w: 10, h: 2 } },
-    { label: '8×4 ft\nBillboard', data: { w: 8, h: 4 } },
-    { label: '16×9 ft\nStage screen', data: { w: 16, h: 9 } },
-    { label: '20×10 ft\nOutdoor large', data: { w: 20, h: 10 } },
+    { label: '4x0.5 ft\nName board', data: { w: 4, h: 0.5 } },
+    { label: '6x1 ft\nBanner', data: { w: 6, h: 1 } },
+    { label: '10x2 ft\nStorefront', data: { w: 10, h: 2 } },
+    { label: '8x4 ft\nBillboard', data: { w: 8, h: 4 } },
+    { label: '16x9 ft\nStage screen', data: { w: 16, h: 9 } },
+    { label: '20x10 ft\nOutdoor large', data: { w: 20, h: 10 } },
   ];
   elements.sizePresets.innerHTML = presets.map(p => `
     <button type="button" class="pset" data-action="set-size" data-width="${p.data.w}" data-height="${p.data.h}">${p.label}</button>
@@ -354,7 +357,7 @@ const updatePixelNote = () => {
   if (!pitch || !pitch.pixels) return;
   const cols = pitch.pixels.w;
   const rows = pitch.pixels.h;
-  elements.pixelNote.textContent = `${W}×${H} ft with ${pitch.code} = ${cols} × ${rows} LED pixels (${(cols * rows).toLocaleString()} total)`;
+  elements.pixelNote.textContent = `${W}x${H} ft with ${pitch.code} = ${cols} x ${rows} LED pixels (${(cols * rows).toLocaleString()} total)`;
 };
 
 const updateLayoutUI = () => {
@@ -574,73 +577,79 @@ const urlToBase64 = async (url) => {
 
 const goToPreview = () => {
   renderPreview();
-  showPage(5);
+  showPage(6);
 };
 
 const renderPreview = () => {
-  const W = parseFloat(elements.sw?.value) || 6;
-  const H = parseFloat(elements.sh?.value) || 1;
-  const pitch = state.selectedPitch;
-  if (!pitch || !pitch.pixels || !elements.boardCanvas || !elements.boardWrap || !elements.stage) return;
+  console.log('RENDER PREVIEW RUNNING', layout, state.contentType);
+  try {
+    const W = parseFloat(elements.sw?.value) || 6;
+    const H = parseFloat(elements.sh?.value) || 1;
+    const pitch = state.selectedPitch;
+    if (!pitch || !pitch.pixels || !elements.boardCanvas || !elements.boardWrap || !elements.stage) return;
 
-  elements.sizeTag.textContent = `${W} × ${H} ft`;
-  elements.pitchTag.textContent = pitch.code;
-  elements.pixelInfo.textContent = `${pitch.pixels.w} × ${pitch.pixels.h} LED px`;
+    elements.sizeTag.textContent = `${W} x ${H} ft`;
+    elements.pitchTag.textContent = pitch.code;
+    elements.pixelInfo.textContent = `${pitch.pixels.w} x ${pitch.pixels.h} LED px`;
 
-  const canvas = elements.boardCanvas;
-  const stage = elements.stage;
-  const wrap = elements.boardWrap;
-  const aspect = W / H;
-  canvas.width = 800;
-  canvas.height = 600;
+    const canvas = elements.boardCanvas;
+    const stage = elements.stage;
+    const wrap = elements.boardWrap;
+    const aspect = W / H;
+    canvas.width = 800;
+    canvas.height = 600;
 
-  const stageW = stage.clientWidth || window.innerWidth;
-  const stageH = stage.clientHeight || (window.innerHeight - 160);
-  let cw, ch;
-  if (stageW / stageH > aspect) {
-    ch = stageH;
-    cw = ch * aspect;
-  } else {
-    cw = stageW;
-    ch = cw / aspect;
-  }
-  wrap.style.width = `${cw}px`;
-  wrap.style.height = `${ch}px`;
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
+    const stageW = stage.clientWidth || window.innerWidth;
+    const stageH = stage.clientHeight || (window.innerHeight - 160);
+    let cw, ch;
+    if (stageW / stageH > aspect) {
+      ch = stageH;
+      cw = ch * aspect;
+    } else {
+      cw = stageW;
+      ch = cw / aspect;
+    }
+    wrap.style.width = `${cw}px`;
+    wrap.style.height = `${ch}px`;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (state.contentType === 'image') {
-    if (!state.imageFile) {
-      showPlaceholder(ctx, 'Select an image...');
+    if (state.contentType === 'image') {
+      if (!state.imageFile) {
+        showPlaceholder(ctx, 'Select an image...');
+        return;
+      }
+      renderImagePreview(canvas, ctx, state.imageFile);
       return;
     }
-    renderImagePreview(canvas, ctx, state.imageFile);
-    return;
-  }
 
-  if (state.contentType === 'url') {
-    if (!state.imageURL.trim()) {
-      showPlaceholder(ctx, 'Enter image URL...');
+    if (state.contentType === 'url') {
+      if (!state.imageURL.trim()) {
+        showPlaceholder(ctx, 'Enter image URL...');
+        return;
+      }
+      renderImagePreview(canvas, ctx, state.imageURL);
       return;
     }
-    renderImagePreview(canvas, ctx, state.imageURL);
-    return;
-  }
 
-  ctx.save();
-  ctx.translate(canvas.width / 2 + layout.posX, canvas.height / 2 + layout.posY);
-  ctx.scale(layout.scaleX, layout.scaleY);
-  renderTextCanvas(canvas, ctx, true);
-  ctx.restore();
+    ctx.save();
+    ctx.translate(canvas.width / 2 + layout.posX, canvas.height / 2 + layout.posY);
+    ctx.scale(layout.scaleX, layout.scaleY);
+    renderTextCanvas(canvas, ctx, true);
+    ctx.restore();
+  } catch (error) {
+    console.error('Preview error:', error);
+  }
 };
 
 const renderLayoutLivePreview = () => {
+  console.log('RENDER LAYOUT LIVE PREVIEW', layout, state.contentType);
   const canvas = elements.layoutLiveCanvas;
   if (!canvas) return;
 
@@ -649,8 +658,9 @@ const renderLayoutLivePreview = () => {
   const pitch = state.selectedPitch;
   if (!pitch || !pitch.pixels) return;
 
-  canvas.width = 400;
-  canvas.height = canvas.width * (H / W);
+  const displayWidth = canvas.clientWidth || 400;
+  canvas.width = displayWidth;
+  canvas.height = Math.max(1, Math.round(displayWidth * (H / W)));
 
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -659,7 +669,7 @@ const renderLayoutLivePreview = () => {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   if (elements.layoutPreviewInfo) {
-    elements.layoutPreviewInfo.textContent = `${W}×${H} ft · ${pitch.code} · ${pitch.pixels.w}×${pitch.pixels.h} px`;
+    elements.layoutPreviewInfo.textContent = `${W}x${H} ft | ${pitch.code} | ${pitch.pixels.w}x${pitch.pixels.h} px`;
   }
 
   if (state.contentType === 'image') {
@@ -923,7 +933,7 @@ const loadRecent = async () => {
       <a class="saved-row" href="/board/${board.slug}" target="_blank">
         <div>
           <div class="saved-slug">${board.slug}</div>
-          <div class="saved-info">${board.widthFt}×${board.heightFt} ft · ${board.pitchCode || 'P10'} · ${((board.lines && board.lines.length) || 0)} lines · Views ${board.views}</div>
+          <div class="saved-info">${board.widthFt}x${board.heightFt} ft | ${board.pitchCode || 'P10'} | ${((board.lines && board.lines.length) || 0)} lines | Views ${board.views}</div>
         </div>
         <div class="saved-date">${new Date(board.createdAt).toLocaleDateString()}</div>
       </a>
