@@ -24,10 +24,14 @@
     <div class="scroller max-w">
       <div class="home-icon">LED</div>
       <h1 class="home-title">Create your <em>LED board</em> quickly</h1>
-      <p class="home-sub">Build text, image or URL board previews, save to the database, and export ready-to-run HTML.</p>
-      <button type="button" class="home-cta" data-action="start-new">+ Create New Board</button>
+      <p class="home-sub">Update your LED text from the control panel and keep one permanent text URL live at all times.</p>
+      <button type="button" class="home-cta" data-action="start-new">Open Control Panel</button>
+      <div class="perm-card">
+        <div class="perm-label">Permanent text URL</div>
+        <div id="permanent-display-url" class="perm-url">/display</div>
+      </div>
       <section class="home-saved">
-        <div class="sec-label">Recent boards</div>
+        <div class="sec-label">Recent saved boards</div>
         <div id="saved-list" class="saved-list"></div>
       </section>
     </div>
@@ -45,26 +49,10 @@
       </div>
     </div>
     <div class="scroller max-w">
-      <div class="content-type-toggle">
-        <button type="button" id="btn-text" class="content-btn active" data-action="set-content-type" data-content-type="text">Text</button>
-        <button type="button" id="btn-image" class="content-btn" data-action="set-content-type" data-content-type="image">Image</button>
-        <button type="button" id="btn-url" class="content-btn" data-action="set-content-type" data-content-type="url">URL</button>
-      </div>
       <div id="text-inputs">
         <div class="sec-label">Text lines</div>
         <div id="lines-list" class="lines-list"></div>
         <button type="button" class="add-line-btn" data-action="add-line">+ Add Line</button>
-      </div>
-      <div id="image-inputs" style="display:none; margin-top:22px;">
-        <div class="sec-label">Upload image</div>
-        <input id="image-upload" class="cinput" type="file" accept="image/png,image/jpeg">
-        <div id="image-name" class="muted">No image selected.</div>
-        <div id="image-preview" class="muted">Select a PNG or JPG to preview on the board.</div>
-      </div>
-      <div id="url-inputs" style="display:none; margin-top:22px;">
-        <div class="sec-label">Image URL</div>
-        <input id="image-url" class="cinput" type="text" placeholder="Paste image URL here">
-        <div id="image-preview-url" class="muted">The board preview updates as soon as the URL is entered.</div>
       </div>
     </div>
     <div class="nav-foot">
@@ -148,39 +136,6 @@
       </div>
     </div>
     <div class="layout-container layout-page">
-      <div class="layout-section-controls controls controls">
-        <div class="card-title">Layout Controls</div>
-        <div id="layout-controls-panel" style="display:none;">
-          <div class="layout-grid">
-            <label class="layout-label">X Position
-              <div class="layout-row"><span>-100</span><input id="layout-live-posX" class="layout-input" name="posX" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
-              <div class="layout-value" id="layout-live-posX-value">0</div>
-            </label>
-            <label class="layout-label">Y Position
-              <div class="layout-row"><span>-100</span><input id="layout-live-posY" class="layout-input" name="posY" type="range" min="-100" max="100" step="1" value="0"><span>100</span></div>
-              <div class="layout-value" id="layout-live-posY-value">0</div>
-            </label>
-            <label class="layout-label">Width Scale
-              <div class="layout-row"><span>0.2</span><input id="layout-live-scaleX" class="layout-input" name="scaleX" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
-              <div class="layout-value" id="layout-live-scaleX-value">1.00</div>
-            </label>
-            <label class="layout-label">Height Scale
-              <div class="layout-row"><span>0.2</span><input id="layout-live-scaleY" class="layout-input" name="scaleY" type="range" min="0.2" max="5" step="0.05" value="1"><span>5</span></div>
-              <div class="layout-value" id="layout-live-scaleY-value">1.00</div>
-            </label>
-            <div class="layout-actions">
-              <button type="button" class="pset" data-action="fit-width">Fit Width</button>
-              <button type="button" class="pset" data-action="fit-height">Fit Height</button>
-              <button type="button" class="pset" data-action="fit-board">Fit Board</button>
-              <button type="button" class="pset" data-action="reset-layout">Reset</button>
-            </div>
-          </div>
-        </div>
-        <div id="layout-image-notice" style="display:none; text-align:center; color:var(--muted2); padding: 20px 0;">
-          <p style="font-size: .9rem; margin-bottom: 8px;">Image content is automatically<br>centered and scaled to fit the board.</p>
-          <p style="font-size: .8rem; color: var(--muted);">No manual adjustments needed.</p>
-        </div>
-      </div>
       <div class="layout-section-preview preview preview">
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">
           <div style="font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em;">Live Preview</div>
@@ -191,7 +146,7 @@
     </div>
     <div class="nav-foot">
       <button type="button" class="prv" data-action="go" data-page="4">Back</button>
-      <button type="button" class="nxt" data-action="go" data-page="6">Preview -></button>
+      <button type="button" class="nxt" data-action="go-to-preview">Preview -></button>
     </div>
   </div>
 
@@ -219,10 +174,10 @@
     </div>
     <div class="action-bar">
       <button type="button" class="pbtn primary" data-action="download-html" title="Download HTML file">Download HTML</button>
-      <button type="button" class="pbtn" data-action="save-and-gen" title="Save & Get shareable URL">Save & Generate</button>
+      <button type="button" class="pbtn" data-action="save-and-gen" title="Update permanent text URL">Update Text URL</button>
     </div>
     <div id="result-bar" class="result-bar">
-      <span class="res-label">Shareable board URL</span>
+      <span class="res-label">Permanent text URL</span>
       <div id="url-show" class="url-show"></div>
       <button type="button" id="copy-btn" class="copy-btn" data-action="copy-url">Copy</button>
       <a id="open-link" class="open-link" target="_blank" rel="noreferrer">Open</a>
@@ -234,6 +189,6 @@
     <div id="ov-text" class="ov-text">Working...</div>
   </div>
 
-  <script defer src="/app.js?v=5"></script>
+  <script defer src="/app.js"></script>
 </body>
 </html>

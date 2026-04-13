@@ -118,7 +118,7 @@ function renderTextCanvas(canvas, ctx) {
     ctx.font = '1rem sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Add text lines...', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('Add text lines...', canvas.width / 1.5, canvas.height / 1.5);
     return;
   }
 
@@ -131,7 +131,7 @@ function renderTextCanvas(canvas, ctx) {
     ctx.textAlign = line.align;
     ctx.textBaseline = 'middle';
 
-    const x = line.align === 'center' ? canvas.width / 2 : line.align === 'right' ? canvas.width - 20 : 20;
+    const x = line.align === 'center' ? canvas.width / 2 : line.align === 'right' ? canvas.width - 10 : 10;
     const y = (idx + 0.5) * lineHeight;
     ctx.fillText(line.text, x, y);
   });
@@ -146,8 +146,8 @@ function drawImageNormal(img, canvas, ctx) {
   const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
   const w = img.width * scale;
   const h = img.height * scale;
-  const x = (canvas.width - w) / 2;
-  const y = (canvas.height - h) / 2;
+  const x = (canvas.width - w) / 1.5;
+  const y = (canvas.height - h) / 1.5;
 
   ctx.drawImage(img, x, y, w, h);
 }

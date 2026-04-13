@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LED Live Display</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      /* FORCED PURE BLACK BACKGROUND */
+      background-color: #000000 !important; 
+      color: #ffffff;
+      font-family: 'DM Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+      overflow: hidden; /* Prevents scrollbars when text touches the edge */
+    }
+
+    .screen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000000;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      line-height: 1.05; /* Tighter line height for large text */
+      font-weight: 800;
+      transform-origin: center center;
+    }
+
+    .line {
+      /* Force single line so our edge-to-edge math works perfectly */
+      white-space: nowrap; 
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="content" id="content">Loading text...</div>
+  </div>
+
+  <script>
+    const DEFAULT_BOARD = {
+      lines: [
+        { text: 'WELCOME', color: '#ffffff' }
+      ]
+    };
+
+    const contentEl = document.getElementById('content');
+
+    function getBoardId() {
+      const parts = location.pathname.split('/').filter(Boolean);
+      return parts[1] || 'default';
+    }
+
+    function dataEndpoint() {
+      const id = getBoardId();
+      return id === 'default' ? '/data' : '/data/' + encodeURIComponent(id);
+    }
+
+    function normalizeLine(line) {
+      const text = String(line?.text || '').trim();
+      return {
+        text: text || '',
+        color: /^#[0-9a-fA-F]{6}$/.test(String(line?.color || '')) ? String(line.color).toLowerCase() : '#ffffff'
+      };
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderBoard(payload) {
+      // Normalize lines
+      const lines = Array.isArray(payload?.lines) && payload.lines.length 
+        ? payload.lines.map(normalizeLine).filter((item) => item.text)
+        : DEFAULT_BOARD.lines;
+
+      // Inject HTML
+      contentEl.innerHTML = lines
+        .map((line) => `<div class="line" style="color:${line.color};">${escapeHtml(line.text)}</div>`)
+        .join('');
+      
+      // Calculate true edge-to-edge fit
+      adjustFontSize();
+    }
+
+    function adjustFontSize() {
+      const lines = document.querySelectorAll('.line');
+      if (!lines.length) return;
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      let totalHeight = 0;
+
+      // Step 1: Force every line to touch the left and right edges (100% width)
+      lines.forEach(line => {
+        // Set a baseline font size to measure against
+        line.style.fontSize = '100px'; 
+        
+        const textWidth = line.scrollWidth || 1;
+        
+        // Calculate the exact multiplier needed to hit the edge of the screen
+        const scaleFactor = viewportWidth / textWidth;
+        const newFontSize = Math.floor(100 * scaleFactor);
+        
+        // Apply the maximized font size
+        line.style.fontSize = `${newFontSize}px`;
+        totalHeight += line.offsetHeight;
+      });
+
+      // Step 2: If the combined height of the text pushes past the top/bottom 
+      // of the screen, scale the entire container down uniformly.
+      if (totalHeight > viewportHeight) {
+        const heightScale = viewportHeight / totalHeight;
+        contentEl.style.transform = `scale(${heightScale})`;
+      } else {
+        contentEl.style.transform = 'none';
+      }
+    }
+
+    async function fetchBoard() {
+      try {
+        const response = await fetch(dataEndpoint(), { cache: 'no-store' });
+        if (!response.ok) throw new Error('Fetch failed');
+        const payload = await response.json();
+        renderBoard(payload);
+      } catch (_error) {
+        // Only show offline if we don't already have text on screen
+        if (contentEl.textContent === 'Loading text...') {
+           contentEl.innerHTML = '<div class="line" style="color:red;">OFFLINE</div>';
+           adjustFontSize();
+        }
+      }
+    }
+
+    // Re-calculate math if the screen size changes
+    window.addEventListener('resize', adjustFontSize);
+    
+    // Fetch new data every 2 seconds
+    setInterval(fetchBoard, 2000);
+    fetchBoard();
+  </script>
+</body>
+</html>

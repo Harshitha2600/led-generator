@@ -1,0 +1,28 @@
+{
+  "default": {
+    "id": "default",
+    "lines": [
+      {
+        "text": "HEEEE",
+        "fontSize": 80,
+        "fontFamily": "'DM Sans',sans-serif",
+        "color": "#00e676",
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "align": "center",
+        "letterSpacing": 1
+      }
+    ],
+    "widthFt": 6,
+    "heightFt": 1,
+    "pixelPitch": 10,
+    "pitchCode": "P10",
+    "ledOn": "#39ff88",
+    "ledOff": "#04110b",
+    "background": "#000000",
+    "animation": "scroll",
+    "animationSpeed": 4,
+    "updatedAt": "2026-04-13T09:26:43.661Z"
+  }
+}

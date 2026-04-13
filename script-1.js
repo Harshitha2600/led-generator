@@ -512,7 +512,7 @@ function renderPreview() {
       ctx.fillStyle = 'rgba(255,255,255,0.2)';
       ctx.font = '1rem sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Enter an image URL to preview', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('Enter an image URL to preview', canvas.width / 1.5, canvas.height / 1.5);
       return;
     }
     drawImageOnCanvas(imageURL);
