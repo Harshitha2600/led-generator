@@ -24,6 +24,16 @@ const WS_MAGIC = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const activeSockets = new Set();
 let mongoBoardsEnabled = false;
 
+// --- 1. STRICT ANTI-CACHING MIDDLEWARE ---
+// Forces Render, Netlify, and Android LED browsers to ALWAYS fetch fresh data.
+const noCache = (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store'); // Disables CDN edge caching
+  next();
+};
+
 const DEFAULT_BOARD = {
   id: DEFAULT_BOARD_ID,
   lines: [
@@ -304,9 +314,18 @@ ensureLiveBoardsFile();
 
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static(PUBLIC_DIR));
 
-app.get('/health/live', (_req, res) => {
+// --- 2. STATIC FILES CACHE BUSTING ---
+// Serve public folder, but explicitly disable ETags and caching
+app.use(express.static(PUBLIC_DIR, {
+  etag: false,
+  lastModified: false,
+  maxAge: 0 
+}));
+
+// --- ROUTES ---
+// We inject 'noCache' into every route that handles HTML or JSON data
+app.get('/health/live', noCache, (_req, res) => {
   res.json({
     ok: true,
     defaultDisplay: '/display',
@@ -316,7 +335,7 @@ app.get('/health/live', (_req, res) => {
   });
 });
 
-app.get('/api/boards', (_req, res, next) => {
+app.get('/api/boards', noCache, (_req, res, next) => {
   if (mongoBoardsEnabled) {
     next();
     return;
@@ -324,11 +343,11 @@ app.get('/api/boards', (_req, res, next) => {
   res.json({ success: true, boards: [] });
 });
 
-app.get('/data', (_req, res) => {
+app.get('/data', noCache, (_req, res) => {
   res.json(getLiveBoard(DEFAULT_BOARD_ID));
 });
 
-app.get('/data/:id', (req, res) => {
+app.get('/data/:id', noCache, (req, res) => {
   const board = getLiveBoard(req.params.id);
   if (!board) {
     res.status(404).json({ error: 'Display board not found.' });
@@ -337,27 +356,27 @@ app.get('/data/:id', (req, res) => {
   res.json(board);
 });
 
-app.post('/update', (req, res) => {
+app.post('/update', noCache, (req, res) => {
   const board = saveLiveBoard(DEFAULT_BOARD_ID, req.body || {});
   broadcastBoardUpdate(board);
   res.json({ success: true, id: board.id, displayUrl: '/display', board });
 });
 
-app.post('/update/:id', (req, res) => {
+app.post('/update/:id', noCache, (req, res) => {
   const board = saveLiveBoard(req.params.id, req.body || {});
   broadcastBoardUpdate(board);
   res.json({ success: true, id: board.id, displayUrl: `/display/${board.id}`, board });
 });
 
-app.get('/display', (_req, res) => {
+app.get('/display', noCache, (_req, res) => {
   res.type('html').send(buildDisplayPage());
 });
 
-app.get('/display/:id', (_req, res) => {
+app.get('/display/:id', noCache, (_req, res) => {
   res.type('html').send(buildDisplayPage());
 });
 
-app.get('/board/:slug', async (req, res) => {
+app.get('/board/:slug', noCache, async (req, res) => {
   if (!mongoBoardsEnabled || !Board) {
     res.status(404).send('Saved board history is unavailable.');
     return;
@@ -377,10 +396,12 @@ app.get('/board/:slug', async (req, res) => {
   }
 });
 
-app.get('*', (_req, res) => {
+// Wildcard catch-all for the editor homepage
+app.get('*', noCache, (_req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
+// --- WEBSOCKET LOGIC (Untouched) ---
 server.on('upgrade', (req, socket) => {
   if (req.url !== '/ws') {
     socket.destroy();

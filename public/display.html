@@ -3,48 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <title>Live LED Display</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&family=Oswald:wght@700&display=swap" rel="stylesheet">
   <style>
-    /* --- 3. Display Settings & 5. Layout --- */
+    * { box-sizing: border-box; }
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #000000;
-      overflow: hidden; /* Disable scrollbars permanently */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'DM Sans', 'Oswald', Arial, sans-serif;
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background-color: #000000; overflow: hidden;
+      display: flex; justify-content: center; align-items: center;
     }
-
     #text-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-      padding: 4vw; /* Safe padding so text never touches the absolute edge */
+      width: 94vw; height: 94vh;
+      display: flex; justify-content: center; align-items: center;
     }
-
-    /* --- 1. Fix lowercase visibility --- */
     #text-display {
-      font-weight: 800; /* Extra Bold */
-      text-align: center;
-      white-space: pre-wrap; /* Respects multi-line text */
-      word-wrap: break-word;
-      
-      /* CRITICAL FIX for letters like 'j', 'g', 'y' */
-      line-height: 1.3; 
-      padding-bottom: 0.15em; 
-      padding-top: 0.15em;
-      overflow: visible; 
-      
-      /* Hardware acceleration hint for smoother rendering on old TVs/LEDs */
-      transform: translateZ(0); 
+      font-weight: 800; text-align: center; white-space: pre-wrap; word-wrap: break-word;
+      line-height: 1.15; padding-top: 0.15em; padding-bottom: 0.15em;
+      transform: translateZ(0);
     }
   </style>
 </head>
@@ -55,109 +35,114 @@
   </div>
 
   <script>
+    const containerEl = document.getElementById('text-container');
     const displayEl = document.getElementById('text-display');
+    
     let currentText = "";
-    let typeTimeout = null;
+    let typingTimeout = null;
 
-    // --- 4. Text Scaling Engine ---
-    function adjustScaling(text) {
-      const charCount = Math.max(text.length, 1);
-      
-      // Estimate optimal VW (Viewport Width) based on character count.
-      // Short words get big text. Long sentences shrink automatically.
-      let optimalVw = 100 / (charCount * 0.55); 
-      
-      // Clamp the values to prevent extreme sizes
-      if (optimalVw > 25) optimalVw = 25; // Maximum width
-      if (optimalVw < 4) optimalVw = 4;   // Minimum width
-      
-      // clamp(min, preferred, max) ensures it never exceeds 30% of the screen height either
-      displayEl.style.fontSize = `clamp(16px, ${optimalVw}vw, 30vh)`;
+    // JavaScript Auto-Fit
+    function applyPerfectFontSize(text) {
+      if (!text) return;
+      displayEl.textContent = text;
+      const targetW = containerEl.clientWidth;
+      const targetH = containerEl.clientHeight;
+      let minFont = 10;
+      let maxFont = Math.max(targetW, targetH);
+      let bestFit = minFont;
+
+      for (let i = 0; i < 20; i++) {
+        let testSize = (minFont + maxFont) / 2;
+        displayEl.style.fontSize = testSize + 'px';
+        if (displayEl.scrollWidth <= targetW && displayEl.scrollHeight <= targetH) {
+          bestFit = testSize; minFont = testSize;
+        } else {
+          maxFont = testSize;
+        }
+      }
+
+      displayEl.style.fontSize = (Math.floor(bestFit) - 1) + 'px';
+      void displayEl.offsetHeight; 
+      displayEl.textContent = ""; 
     }
 
-    // --- 2. Safe Typing Animation Engine ---
+    // Typing Engine with Stabilization Delay
     function typeText(text, index, lastTime) {
-      if (index === 0) {
-        displayEl.textContent = "";
-      }
+      if (index === 0) displayEl.textContent = "";
 
       if (index < text.length) {
         const now = performance.now();
         
-        // 7. LOW-PERFORMANCE HARDWARE FALLBACK
-        // If the LED processor is lagging (took > 250ms to render the last character), 
-        // we abort the animation and dump the full text instantly to prevent crashing.
+        // Lag Fallback
         if (index > 0 && (now - lastTime) > 250) {
           displayEl.textContent = text;
+          // 6. STABILIZATION DELAY: Wait 600ms for hardware to catch up before recalc
+          setTimeout(forceFinalRecalculation, 600);
           return;
         }
 
         displayEl.textContent += text.charAt(index);
         
-        // Simple, non-blocking timeout (100ms per character)
-        typeTimeout = setTimeout(() => {
+        typingTimeout = setTimeout(() => {
           typeText(text, index + 1, performance.now());
-        }, 100);
+        }, 80); 
         
+      } else {
+        // 6. STABILIZATION DELAY: Animation done, let hardware rest for 600ms
+        setTimeout(forceFinalRecalculation, 600);
       }
     }
 
-    // --- 6. Data Fetching & Cache Busting ---
+    // Force Android WebView to dump cached frames
+    function forceFinalRecalculation() {
+      displayEl.style.transform = "translateZ(1px)";
+      setTimeout(() => { displayEl.style.transform = "translateZ(0)"; }, 50);
+    }
+
+    // Data Fetching
     async function fetchBoardData() {
       try {
-        // ?t=timestamp forces the browser to bypass cache
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/data?t=${timestamp}`);
+        // 2. API CACHE BUSTING: Forces Render/Netlify edge nodes to fetch fresh data
+        const response = await fetch(`/data?t=${Date.now()}`);
         
         if (!response.ok) return;
         const data = await response.json();
         
-        // Default fallbacks
         let newText = "";
         let color = "#ff6b00"; 
         let fontFamily = "'DM Sans', sans-serif";
 
         if (data && data.lines && data.lines.length > 0) {
-          // Combine lines into a single string with line breaks
           newText = data.lines.map(l => l.text.trim()).filter(Boolean).join('\n');
           if (data.lines[0].color) color = data.lines[0].color;
           if (data.lines[0].fontFamily) fontFamily = data.lines[0].fontFamily;
         }
 
-        // Only trigger an update if the text actually changed
         if (newText !== currentText && newText !== "") {
           currentText = newText;
-          
           displayEl.style.color = color;
           displayEl.style.fontFamily = fontFamily;
           
-          // Size the text BEFORE typing starts so the container doesn't jump around
-          adjustScaling(newText);
+          if (typingTimeout) clearTimeout(typingTimeout);
           
-          // Clear any currently running animation
-          if (typeTimeout) clearTimeout(typeTimeout);
-          
-          // Start fresh typing effect
+          applyPerfectFontSize(newText);
           typeText(newText, 0, performance.now());
         }
-
       } catch (error) {
         console.error("Data fetch error. Retrying next cycle...", error);
-        // If internet drops, the current text simply stays safely on screen.
       }
     }
 
-    // Start immediately
     fetchBoardData();
-
-    // Check for new updates every 3 seconds
     setInterval(fetchBoardData, 3000);
     
-    // Auto-recalculate size if the screen is rotated or resized
     window.addEventListener('resize', () => {
-       if (currentText) adjustScaling(currentText);
+       if (currentText) {
+         displayEl.textContent = currentText; 
+         applyPerfectFontSize(currentText);   
+         displayEl.textContent = currentText; 
+       }
     });
-
   </script>
 </body>
 </html>
