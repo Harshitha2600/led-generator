@@ -19,11 +19,11 @@
       height: 100%;
       margin: 0;
       padding: 0;
-      /* FORCED PURE BLACK BACKGROUND */
+      /* Full black background */
       background-color: #000000 !important; 
       color: #ffffff;
       font-family: 'DM Sans', 'Segoe UI', Roboto, Arial, sans-serif;
-      overflow: hidden; /* Prevents scrollbars when text touches the edge */
+      overflow: hidden; 
     }
 
     .screen {
@@ -35,19 +35,31 @@
       background-color: #000000;
     }
 
+    /* The actual LED board fills the whole viewport */
+    .board {
+      background-color: #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
     .content {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      width: 100%;
-      line-height: 1.05; /* Tighter line height for large text */
+      /* 0.72 to 0.75 tightens the invisible gap above/below standard uppercase fonts */
+      line-height: 0.75; 
       font-weight: 800;
       transform-origin: center center;
+      /* Base font size to measure and scale from */
+      font-size: 100px; 
     }
 
     .line {
-      /* Force single line so our edge-to-edge math works perfectly */
       white-space: nowrap; 
       margin: 0;
       padding: 0;
@@ -56,17 +68,18 @@
 </head>
 <body>
   <div class="screen">
-    <div class="content" id="content">Loading text...</div>
+    <div class="board" id="board">
+      <div class="content" id="content">Loading text...</div>
+    </div>
   </div>
 
   <script>
     const DEFAULT_BOARD = {
-      lines: [
-        { text: 'WELCOME', color: '#ffffff' }
-      ]
+      lines: [{ text: 'WELCOME', color: '#ffffff' }]
     };
 
     const contentEl = document.getElementById('content');
+    const boardEl = document.getElementById('board');
 
     function getBoardId() {
       const parts = location.pathname.split('/').filter(Boolean);
@@ -80,10 +93,11 @@
 
     function normalizeLine(line) {
       const text = String(line?.text || '').trim();
-      return {
-        text: text || '',
-        color: /^#[0-9a-fA-F]{6}$/.test(String(line?.color || '')) ? String(line.color).toLowerCase() : '#ffffff'
-      };
+      let color = '#ffffff';
+      if (line?.color && /^#[0-9a-fA-F]{6}$/.test(String(line.color))) {
+        color = String(line.color).toLowerCase();
+      }
+      return { text: text || '', color: color };
     }
 
     function escapeHtml(value) {
@@ -96,52 +110,39 @@
     }
 
     function renderBoard(payload) {
-      // Normalize lines
       const lines = Array.isArray(payload?.lines) && payload.lines.length 
         ? payload.lines.map(normalizeLine).filter((item) => item.text)
         : DEFAULT_BOARD.lines;
 
-      // Inject HTML
       contentEl.innerHTML = lines
         .map((line) => `<div class="line" style="color:${line.color};">${escapeHtml(line.text)}</div>`)
         .join('');
       
-      // Calculate true edge-to-edge fit
-      adjustFontSize();
+      adjustLayout();
     }
 
-    function adjustFontSize() {
+    function adjustLayout() {
       const lines = document.querySelectorAll('.line');
       if (!lines.length) return;
 
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      let totalHeight = 0;
+      // 1. Reset transforms to get natural measurements
+      contentEl.style.transform = 'none';
 
-      // Step 1: Force every line to touch the left and right edges (100% width)
-      lines.forEach(line => {
-        // Set a baseline font size to measure against
-        line.style.fontSize = '100px'; 
-        
-        const textWidth = line.scrollWidth || 1;
-        
-        // Calculate the exact multiplier needed to hit the edge of the screen
-        const scaleFactor = viewportWidth / textWidth;
-        const newFontSize = Math.floor(100 * scaleFactor);
-        
-        // Apply the maximized font size
-        line.style.fontSize = `${newFontSize}px`;
-        totalHeight += line.offsetHeight;
-      });
+      // 2. Get exact screen dimensions
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
 
-      // Step 2: If the combined height of the text pushes past the top/bottom 
-      // of the screen, scale the entire container down uniformly.
-      if (totalHeight > viewportHeight) {
-        const heightScale = viewportHeight / totalHeight;
-        contentEl.style.transform = `scale(${heightScale})`;
-      } else {
-        contentEl.style.transform = 'none';
-      }
+      // 3. Get the natural width and height of the tight text block
+      const rect = contentEl.getBoundingClientRect();
+      const textW = rect.width || 1;
+      const textH = rect.height || 1;
+
+      // 4. Calculate exact multipliers to stretch it to the edges
+      const scaleX = screenW / textW;
+      const scaleY = screenH / textH;
+
+      // 5. Apply the stretch
+      contentEl.style.transform = `scale(${scaleX}, ${scaleY})`;
     }
 
     async function fetchBoard() {
@@ -151,18 +152,14 @@
         const payload = await response.json();
         renderBoard(payload);
       } catch (_error) {
-        // Only show offline if we don't already have text on screen
         if (contentEl.textContent === 'Loading text...') {
            contentEl.innerHTML = '<div class="line" style="color:red;">OFFLINE</div>';
-           adjustFontSize();
+           adjustLayout();
         }
       }
     }
 
-    // Re-calculate math if the screen size changes
-    window.addEventListener('resize', adjustFontSize);
-    
-    // Fetch new data every 2 seconds
+    window.addEventListener('resize', adjustLayout);
     setInterval(fetchBoard, 2000);
     fetchBoard();
   </script>

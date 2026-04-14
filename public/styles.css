@@ -828,11 +828,11 @@ button, input, select, textarea {
 
 /* PAGE 5 */
 #p5 {
-  background: #000;
-  position: fixed;
-  inset: 0;
+  background: var(--bg);
+  position: relative;
   display: none;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 #p5.active {
@@ -917,17 +917,47 @@ button, input, select, textarea {
   background: #00a8d8;
 }
 
-.stage {
+/* ========================================================
+   GRAY STAGE & BLACK LED BOARD PREVIEWS
+   ======================================================== */
+
+/* 1. The Stage (Wall) - Dark Gray with a subtle grid */
+.stage, 
+.layout-section-preview {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 20px; /* Pad so board doesn't touch edges */
   overflow: hidden;
   position: relative;
-  /* Fixed the green background grids */
-  background: #000000 !important;
+  background-color: #1a1a1a !important;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
+  background-size: 25px 25px !important;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+/* 2. The LED Board - Pure Black Box with Shadow */
+.board-wrap,
+#layout-preview-wrap,
+.layout-live-canvas {
+  background-color: #000000 !important;
   background-image: none !important;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6) !important;
+  border: 1px solid #222 !important; /* Tiny bezel border */
+  margin: auto !important;
+  display: flex;
+  overflow: hidden;
+  border-radius: 0px; /* LED boards have sharp corners */
+}
+
+/* 3. The Canvas inside the board */
+.board-canvas {
+  background-color: transparent !important;
+  display: block;
 }
 
 .stage-hint {
@@ -946,25 +976,7 @@ button, input, select, textarea {
   z-index: 2;
 }
 
-.board-wrap {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Fixed the green background grids */
-  background: #000000 !important;
-  background-image: none !important;
-}
-
-.board-canvas {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  /* Fixed the green background grids */
-  background-color: transparent !important;
-}
+/* ======================================================== */
 
 .result-bar {
   background: var(--s1);
@@ -1209,23 +1221,11 @@ button, input, select, textarea {
 }
 
 /* LAYOUT PAGE (P5) */
-#p5 {
-  display: none;
-  flex-direction: column;
-  min-height: 100vh;
-  position: static;
-  background: var(--bg);
-}
-
-#p5.active {
-  display: flex;
-}
-
 .layout-container, .layout-page {
   flex: 1;
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .layout-container {
@@ -1244,35 +1244,7 @@ button, input, select, textarea {
   gap: 16px;
 }
 
-.layout-section-preview, .preview {
-  width: 55%;
-  min-width: 0;
-  background: var(--s2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  /* Fixed the green background grids */
-  background: #000000 !important;
-  background-image: none !important;
-}
-
-.layout-live-canvas {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  aspect-ratio: 16/9;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  display: block;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
-  /* Fixed the green background grids */
-  background-color: transparent !important;
-}
-
+/* MOBILE RESPONSIVE MEDIA QUERIES */
 @media(max-width:900px) {
   .layout-container, .layout-page {
     flex-direction: column;
@@ -1281,7 +1253,7 @@ button, input, select, textarea {
     width: 100%;
   }
   .layout-section-preview, .preview {
-    min-height: 300px;
+    min-height: 400px;
   }
 }
 

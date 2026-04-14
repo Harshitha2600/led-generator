@@ -8,6 +8,7 @@ const FONTS = [
   { n: 'Courier New', v: "'Courier New',monospace" },
   { n: 'Arial Black', v: "'Arial Black',sans-serif" },
 ];
+
 const LED_CONFIG = {
   indoor: {
     P4: { pitch: 4, mm: 4, pixels: { w: 80, h: 40 }, label: 'Indoor professional' },
@@ -22,18 +23,21 @@ const LED_CONFIG = {
     P3: { pitch: 3, mm: 3, pixels: { w: 64, h: 64 }, label: 'High-res outdoor' },
   },
 };
+
 const DEFAULT_LINE = () => ({
   id: Date.now() + Math.random(),
   text: '',
-  fontSize: 80,
   fontFamily: FONTS[0].v,
   color: '#ffffff',
   bold: true,
   italic: false,
   underline: false,
   align: 'center',
-  letterSpacing: 1,
+  animMode: 'static',
+  animSpeed: 5,
+  letterSpacing: 2,
 });
+
 const DEFAULT_STATE = {
   lines: [DEFAULT_LINE()],
   boardId: 'default',
@@ -114,8 +118,8 @@ const showPage = (pageNumber) => {
   const target = document.getElementById(`p${pageNumber}`);
   if (target) target.classList.add('active');
   if (pageNumber === 1) loadRecent();
-  if (pageNumber === 5) setTimeout(() => renderLayoutLivePreview(), 80);
-  if (pageNumber === 6) requestAnimationFrame(() => setTimeout(() => renderPreview(), 40));
+  if (pageNumber === 5) updateCanvasSizes();
+  if (pageNumber === 6) updateCanvasSizes();
 };
 
 const addLine = () => {
@@ -129,7 +133,7 @@ const removeLine = (lineId) => {
   state.lines = state.lines.filter((line) => line.id !== lineId);
   renderLines();
   renderStyleBlocks();
-  livePreview();
+  updatePixelNote();
 };
 
 const updateLineProperty = (lineId, key, value) => {
@@ -137,7 +141,6 @@ const updateLineProperty = (lineId, key, value) => {
   if (!line) return;
   line[key] = value;
   if (key === 'text') renderStyleBlocks();
-  livePreview();
 };
 
 const toggleLineStyle = (lineId, styleKey) => {
@@ -145,7 +148,6 @@ const toggleLineStyle = (lineId, styleKey) => {
   if (!line) return;
   line[styleKey] = !line[styleKey];
   renderStyleBlocks();
-  livePreview();
 };
 
 const startNew = () => {
@@ -160,7 +162,7 @@ const startNew = () => {
   renderLines();
   renderStyleBlocks();
   buildPitchGrid();
-  livePreview();
+  updatePixelNote();
 };
 
 const goToStyle = () => {
@@ -203,12 +205,20 @@ const renderStyleBlocks = () => {
         <div class="sblock-body">
           <div class="ctrl-row">
             <div class="ctrl">
-              <div class="ctrl-label">Font Size</div>
-              <input type="number" class="cinput style-input" data-line-id="${line.id}" data-field="fontSize" value="${line.fontSize}" min="12" max="200" step="2">
+              <div class="ctrl-label">Animation Mode</div>
+              <select class="cselect style-input" data-line-id="${line.id}" data-field="animMode">
+                <option value="static" ${line.animMode === 'static' ? 'selected' : ''}>Static</option>
+                <option value="scroll-left" ${line.animMode === 'scroll-left' ? 'selected' : ''}>Scroll Left</option>
+                <option value="scroll-right" ${line.animMode === 'scroll-right' ? 'selected' : ''}>Scroll Right</option>
+                <option value="scroll-up" ${line.animMode === 'scroll-up' ? 'selected' : ''}>Scroll Up</option>
+                <option value="pulse" ${line.animMode === 'pulse' ? 'selected' : ''}>Zoom / Pulse</option>
+                <option value="fade" ${line.animMode === 'fade' ? 'selected' : ''}>Fade In / Out</option>
+                <option value="bounce" ${line.animMode === 'bounce' ? 'selected' : ''}>Bounce Inside</option>
+              </select>
             </div>
             <div class="ctrl">
-              <div class="ctrl-label">Letter Spacing (px)</div>
-              <input type="number" class="cinput style-input" data-line-id="${line.id}" data-field="letterSpacing" value="${line.letterSpacing}" min="-5" max="40" step="1">
+              <div class="ctrl-label">Anim Speed (1-10)</div>
+              <input type="range" class="cinput style-input" data-line-id="${line.id}" data-field="animSpeed" value="${line.animSpeed || 5}" min="1" max="10">
             </div>
           </div>
           <div class="ctrl">
@@ -231,15 +241,6 @@ const renderStyleBlocks = () => {
             <div class="togs">
               <button type="button" class="tog ${line.bold ? 'on' : ''}" data-action="toggle-style" data-line-id="${line.id}" data-field="bold">B</button>
               <button type="button" class="tog ${line.italic ? 'on' : ''}" data-action="toggle-style" data-line-id="${line.id}" data-field="italic">I</button>
-              <button type="button" class="tog ${line.underline ? 'on' : ''}" data-action="toggle-style" data-line-id="${line.id}" data-field="underline">U</button>
-            </div>
-          </div>
-          <div class="ctrl">
-            <div class="ctrl-label">Alignment</div>
-            <div class="aligns">
-              <button type="button" class="aln ${line.align === 'left' ? 'on' : ''}" data-action="set-align" data-line-id="${line.id}" data-align="left">Left</button>
-              <button type="button" class="aln ${line.align === 'center' ? 'on' : ''}" data-action="set-align" data-line-id="${line.id}" data-align="center">Center</button>
-              <button type="button" class="aln ${line.align === 'right' ? 'on' : ''}" data-action="set-align" data-line-id="${line.id}" data-align="right">Right</button>
             </div>
           </div>
         </div>
@@ -283,11 +284,13 @@ const buildSizePresets = () => {
   if (!elements.sizePresets) return;
   const presets = [
     { label: '4x0.5 ft\nName board', data: { w: 4, h: 0.5 } },
+    { label: '2x2 ft\nSquare sign', data: { w: 2, h: 2 } },
     { label: '6x1 ft\nBanner', data: { w: 6, h: 1 } },
     { label: '10x2 ft\nStorefront', data: { w: 10, h: 2 } },
     { label: '8x4 ft\nBillboard', data: { w: 8, h: 4 } },
     { label: '16x9 ft\nStage screen', data: { w: 16, h: 9 } },
     { label: '20x10 ft\nOutdoor large', data: { w: 20, h: 10 } },
+    { label: '24x4 ft\nExtra long', data: { w: 24, h: 4 } },
   ];
   elements.sizePresets.innerHTML = presets
     .map((preset) => `<button type="button" class="pset" data-action="set-size" data-width="${preset.data.w}" data-height="${preset.data.h}">${preset.label}</button>`)
@@ -299,11 +302,10 @@ const selectPitch = (code, category) => {
   if (!config) return;
   state.selectedPitch = { code, category, pixels: config.pixels, mm: config.mm };
   buildPitchGrid();
-  livePreview();
 };
 
 const getBoardSpec = () => {
-  const widthFt = Math.max(1, Number(elements.sw?.value || state.widthFt) || 6);
+  const widthFt = Math.max(0.5, Number(elements.sw?.value || state.widthFt) || 6);
   const heightFt = Math.max(0.5, Number(elements.sh?.value || state.heightFt) || 1);
   state.widthFt = widthFt;
   state.heightFt = heightFt;
@@ -317,168 +319,231 @@ const updatePixelNote = () => {
   if (!elements.pixelNote) return;
   const { widthFt, heightFt, ledCols, ledRows } = getBoardSpec();
   elements.pixelNote.textContent = `${state.selectedPitch.code} | ${widthFt}x${heightFt} ft | ${ledCols}x${ledRows} LEDs | ${(ledCols * ledRows).toLocaleString()} dots`;
-};
-
-// ─── MEASURE HELPERS ──────────────────────────────────────────────────────────
-const measureCanvas = document.createElement('canvas');
-const measureCtx = measureCanvas.getContext('2d');
-
-const measureTextWidth = (line, fontSize) => {
-  const fontStr = `${line.bold ? 'bold ' : ''}${line.italic ? 'italic ' : ''}${fontSize}px ${line.fontFamily}`.trim();
-  measureCtx.font = fontStr;
-  const base = measureCtx.measureText(line.text).width;
-  if (!line.text || line.text.length <= 1 || !line.letterSpacing) return base;
-  return base + (line.text.length - 1) * Number(line.letterSpacing);
-};
-
-// Binary search — finds largest font size where text fits maxWidth
-const fitFontSize = (line, maxWidth, maxHeight) => {
-  let lo = 1, hi = maxHeight * 2;
-  for (let i = 0; i < 28; i++) {
-    const mid = (lo + hi) / 2;
-    if (measureTextWidth(line, mid) < maxWidth * 0.98) lo = mid;
-    else hi = mid;
-  }
-  return Math.max(4, Math.min(lo, maxHeight * 0.95));
-};
-
-// ─── PLAIN TEXT PREVIEW RENDERER (no LED dots, black bg) ─────────────────────
-const renderPlainPreview = (container) => {
-  if (!container) return;
-
-  const activeLines = state.lines.filter((l) => l.text.trim());
-  if (!activeLines.length) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const cw = container.clientWidth  || container.offsetWidth  || 400;
-  const ch = container.clientHeight || container.offsetHeight || 200;
-  const rowHeight = ch / activeLines.length;
-
-  // Build or reuse line divs
-  let existing = container.querySelectorAll('.prev-line');
-  if (existing.length !== activeLines.length) {
-    container.innerHTML = '';
-    activeLines.forEach(() => {
-      const d = document.createElement('div');
-      d.className = 'prev-line';
-      d.style.cssText = 'display:block;white-space:nowrap;width:100%;padding:0;margin:0;background:transparent;overflow:hidden;';
-      container.appendChild(d);
-    });
-    existing = container.querySelectorAll('.prev-line');
-  }
-
-  existing.forEach((el, i) => {
-    const line = activeLines[i];
-    const fontSize = fitFontSize(line, cw, rowHeight);
-    el.textContent       = line.text;
-    el.style.color       = line.color;
-    el.style.textAlign   = line.align;
-    el.style.fontFamily  = line.fontFamily;
-    el.style.fontWeight  = line.bold   ? '800' : '400';
-    el.style.fontStyle   = line.italic ? 'italic' : 'normal';
-    el.style.fontSize    = fontSize + 'px';
-    el.style.height      = rowHeight + 'px';
-    el.style.lineHeight  = rowHeight + 'px';
-    el.style.letterSpacing = (Number(line.letterSpacing) || 0) + 'px';
-  });
-};
-
-// ─── LAYOUT PAGE (p5) LIVE PREVIEW ───────────────────────────────────────────
-const renderLayoutLivePreview = () => {
-  const wrap = document.getElementById('layout-preview-wrap');
-  if (wrap) {
-    renderPlainPreview(wrap);
-    return;
-  }
-  // Fallback: use canvas element but draw plain text on black
-  if (!elements.layoutLiveCanvas) return;
-  const canvas = elements.layoutLiveCanvas;
-  const { widthFt, heightFt } = getBoardSpec();
-  const displayWidth = canvas.clientWidth || 420;
-  canvas.width  = displayWidth;
-  canvas.height = Math.max(1, Math.round(displayWidth * (heightFt / widthFt)));
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const activeLines = state.lines.filter((l) => l.text.trim());
-  if (!activeLines.length) return;
-
-  const rowHeight = canvas.height / activeLines.length;
-  activeLines.forEach((line, i) => {
-    const fontSize = fitFontSize(line, canvas.width, rowHeight);
-    const fontStr = `${line.bold ? 'bold ' : ''}${line.italic ? 'italic ' : ''}${fontSize}px ${line.fontFamily}`.trim();
-    ctx.font = fontStr;
-    ctx.fillStyle = line.color;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = line.align;
-    const y = (i + 0.5) * rowHeight;
-    const x = line.align === 'left' ? 2 : line.align === 'right' ? canvas.width - 2 : canvas.width / 2;
-    ctx.fillText(line.text, x, y);
-  });
-
-  if (elements.layoutPreviewInfo) {
-    const { ledCols, ledRows } = getBoardSpec();
-    elements.layoutPreviewInfo.textContent = `${state.selectedPitch.code} | ${widthFt}x${heightFt} ft | ${ledCols}x${ledRows} LEDs`;
-  }
-};
-
-// ─── FULL PREVIEW PAGE (p6) ───────────────────────────────────────────────────
-const renderPreview = () => {
-  if (!elements.boardCanvas || !elements.boardWrap || !elements.stage) return;
-  const { widthFt, heightFt, ledCols, ledRows } = getBoardSpec();
-
+  
   if (elements.sizeTag)   elements.sizeTag.textContent  = `${widthFt} x ${heightFt} ft`;
   if (elements.pitchTag)  elements.pitchTag.textContent = state.selectedPitch.code;
   if (elements.pixelInfo) elements.pixelInfo.textContent = `${ledCols} x ${ledRows} LED px`;
+};
 
+// ─── HIGH PERFORMANCE CANVAS ANIMATION ENGINE ─────────────────────────────
+
+const setupCanvasWrap = (canvas, wrap, stage) => {
+  if (!canvas || !wrap || !stage) return;
+  const { widthFt, heightFt } = getBoardSpec();
   const aspect = widthFt / heightFt;
-  const stageW = elements.stage.clientWidth  || window.innerWidth;
-  const stageH = elements.stage.clientHeight || (window.innerHeight - 160);
-  let canvasW, canvasH;
-  if (stageW / stageH > aspect) { canvasH = stageH; canvasW = canvasH * aspect; }
-  else { canvasW = stageW; canvasH = canvasW / aspect; }
 
-  elements.boardWrap.style.width  = `${canvasW}px`;
-  elements.boardWrap.style.height = `${canvasH}px`;
-  elements.boardCanvas.width  = Math.max(1, Math.round(canvasW));
-  elements.boardCanvas.height = Math.max(1, Math.round(canvasH));
-  elements.boardCanvas.style.width  = `${canvasW}px`;
-  elements.boardCanvas.style.height = `${canvasH}px`;
+  canvas.width = 3000; // Extreme high-res internal rendering buffer
+  canvas.height = 3000 / aspect;
+  
+  const padding = 80; 
+  const stageW = (stage.clientWidth || window.innerWidth) - padding;
+  const stageH = (stage.clientHeight || (window.innerHeight - 160)) - padding;
+  
+  let cw, ch;
+  if (stageW / stageH > aspect) { 
+      ch = stageH; 
+      cw = ch * aspect; 
+  } else { 
+      cw = stageW; 
+      ch = cw / aspect; 
+  }
 
-  // Draw plain text on black — NO LED dots
-  const canvas = elements.boardCanvas;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  wrap.style.width = `${cw}px`;
+  wrap.style.height = `${ch}px`;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+};
+
+const updateCanvasSizes = () => {
+  updatePixelNote();
+  if (document.getElementById('p5')?.classList.contains('active')) {
+    setupCanvasWrap(elements.layoutLiveCanvas, elements.layoutLiveCanvas?.parentElement, elements.layoutLiveCanvas?.parentElement?.parentElement);
+    if (elements.layoutPreviewInfo) elements.layoutPreviewInfo.textContent = `Live Preview | ${state.widthFt}x${state.heightFt} ft`;
+  }
+  if (document.getElementById('p6')?.classList.contains('active')) {
+    setupCanvasWrap(elements.boardCanvas, elements.boardWrap, elements.stage);
+  }
+};
+
+// ============================================================================
+// CORE RENDERING FIX: 100% FLUSH PERFECT AUTO-FIT ALGORITHM + ANIMATIONS
+// ============================================================================
+const renderFrame = (ctx, canvasW, canvasH, lines, t) => {
+  ctx.clearRect(0, 0, canvasW, canvasH);
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
-  const activeLines = state.lines.filter((l) => l.text.trim());
+  const activeLines = lines.filter((l) => l.text.trim());
   if (!activeLines.length) return;
 
-  const rowHeight = canvas.height / activeLines.length;
+  const sectionHeight = canvasH / activeLines.length;
+
   activeLines.forEach((line, i) => {
-    const fontSize = fitFontSize(line, canvas.width, rowHeight);
-    const fontStr = `${line.bold ? 'bold ' : ''}${line.italic ? 'italic ' : ''}${fontSize}px ${line.fontFamily}`.trim();
-    ctx.font = fontStr;
+    // We target 96% of the screen so it touches the absolute edge without clipping the anti-aliasing
+    const targetW = canvasW * 0.96;
+    const targetH = sectionHeight * 0.96;
+
+    let minFont = 10;
+    let maxFont = Math.max(targetW, targetH) * 3; // Allow massive fonts for short text
+    let bestFontSize = minFont;
+    let bestWrappedLines = [line.text];
+    
+    // Add letter spacing to the canvas natively if supported
+    ctx.letterSpacing = `${line.letterSpacing || 2}px`;
+
+    const getFontStr = (size) => `${line.bold ? 'bold ' : ''}${line.italic ? 'italic ' : ''}${size}px ${line.fontFamily}`.trim();
+
+    // 1. PRECISION BINARY SEARCH: Find perfect font size that wraps text to fit aspect ratio
+    for (let iter = 0; iter < 25; iter++) {
+      let testSize = (minFont + maxFont) / 2;
+      ctx.font = getFontStr(testSize);
+
+      let wordsArr = line.text.split(' ').filter(w => w !== '');
+      if(wordsArr.length === 0) break;
+
+      let wrappedLines = [];
+      let currentLine = wordsArr[0];
+
+      for (let w = 1; w < wordsArr.length; w++) {
+        let word = wordsArr[w];
+        let width = ctx.measureText(currentLine + " " + word).width;
+        if (width <= targetW) {
+            currentLine += " " + word;
+        } else {
+            wrappedLines.push(currentLine);
+            currentLine = word;
+        }
+      }
+      wrappedLines.push(currentLine);
+
+      // Tight line height for perfect flush look
+      let lineHeight = testSize * 1.05;
+      let totalHeight = wrappedLines.length * lineHeight;
+      
+      let maxWidth = 0;
+      for (let wl of wrappedLines) {
+          maxWidth = Math.max(maxWidth, ctx.measureText(wl).width);
+      }
+
+      if (totalHeight <= targetH && maxWidth <= targetW) {
+          bestFontSize = testSize;
+          bestWrappedLines = wrappedLines;
+          minFont = testSize; // We can go bigger
+      } else {
+          maxFont = testSize; // We must go smaller
+      }
+    }
+
+    // 2. MICRO-SCALING TO ELIMINATE GAPS (100% Flush to edges)
+    ctx.font = getFontStr(bestFontSize);
+    const lineHeight = bestFontSize * 1.05;
+    
+    let exactBlockWidth = 0;
+    let blockHeight = 0;
+    
+    // Measure exact optical height of all wrapped lines combined
+    bestWrappedLines.forEach((wl) => {
+        const metrics = ctx.measureText(wl);
+        exactBlockWidth = Math.max(exactBlockWidth, metrics.width);
+        // Fallback calculation for older browsers
+        const h = (metrics.actualBoundingBoxAscent || (bestFontSize * 0.8)) + (metrics.actualBoundingBoxDescent || (bestFontSize * 0.2));
+        blockHeight += h;
+    });
+
+    // Add inter-line spacing to block height
+    blockHeight += (bestWrappedLines.length - 1) * (lineHeight - bestFontSize);
+    if (blockHeight <= 0) blockHeight = 1;
+    if (exactBlockWidth <= 0) exactBlockWidth = 1;
+
+    // Independent flush stretch (eliminates any left/right/top/bottom padding gaps)
+    let scaleX = targetW / exactBlockWidth;
+    let scaleY = targetH / blockHeight;
+
+    // 3. ANIMATION LOGIC
+    let alpha = 1;
+    let drawX = 0;
+    let drawY = 0;
+    const speed = Number(line.animSpeed) || 5;
+    const animMode = line.animMode || 'static';
+
+    if (animMode === 'fade') {
+        alpha = (Math.sin(t * speed * 0.5) + 1) / 2;
+    } else if (animMode === 'scroll-left') {
+        const travel = canvasW + (exactBlockWidth * scaleX);
+        const duration = travel / (speed * 200);
+        const progress = (t % duration) / duration;
+        drawX = (travel / 2) - (progress * travel);
+    } else if (animMode === 'scroll-right') {
+        const travel = canvasW + (exactBlockWidth * scaleX);
+        const duration = travel / (speed * 200);
+        const progress = (t % duration) / duration;
+        // Start from off-screen left and move to off-screen right
+        drawX = -(travel / 2) + (progress * travel); 
+    } else if (animMode === 'scroll-up') {
+        const travel = sectionHeight + (blockHeight * scaleY);
+        const duration = travel / (speed * 150);
+        const progress = (t % duration) / duration;
+        drawY = (travel / 2) - (progress * travel);
+    } else if (animMode === 'bounce') {
+        // Shrink slightly so it actually has room to bounce around
+        scaleX *= 0.70;
+        scaleY *= 0.70;
+        const maxOffsetX = (canvasW / 2) - (exactBlockWidth * scaleX / 2) - (canvasW * 0.05);
+        drawX = Math.sin(t * speed * 0.8) * maxOffsetX; 
+    }
+
+    // 4. DRAW TEXT WITH OPTICAL CENTERING
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = line.color;
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.textAlign = line.align;
-    const y = (i + 0.5) * rowHeight;
-    const x = line.align === 'left' ? 2 : line.align === 'right' ? canvas.width - 2 : canvas.width / 2;
-    ctx.fillText(line.text, x, y);
+
+    // Handle Pulse Animation scaling
+    if (animMode === 'pulse') {
+        const pulse = 1 + 0.1 * Math.sin(t * speed);
+        scaleX *= pulse;
+        scaleY *= pulse;
+    }
+
+    const sectionCenterY = (i * sectionHeight) + (sectionHeight / 2);
+    
+    // Move canvas context to exact center
+    ctx.translate((canvasW / 2) + drawX, sectionCenterY + drawY);
+    ctx.scale(scaleX, scaleY);
+
+    // Calculate optical start Y based on actual font bounding box
+    const totalOpticalHeight = bestWrappedLines.length * lineHeight;
+    const startY = -(totalOpticalHeight / 2) + (lineHeight / 2);
+
+    bestWrappedLines.forEach((wl, lIdx) => {
+         const m = ctx.measureText(wl);
+         const opticalCorrection = m.actualBoundingBoxAscent ? (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2 : 0;
+         ctx.fillText(wl, 0, startY + (lIdx * lineHeight) + opticalCorrection);
+    });
+
+    ctx.restore();
   });
 };
 
-const livePreview = () => {
-  updatePixelNote();
-  if (document.getElementById('p5')?.classList.contains('active')) renderLayoutLivePreview();
-  if (document.getElementById('p6')?.classList.contains('active')) renderPreview();
+// Global Animation Loop
+const animationLoop = () => {
+  const t = performance.now() / 1000; 
+
+  if (document.getElementById('p5')?.classList.contains('active') && elements.layoutLiveCanvas) {
+    const ctx = elements.layoutLiveCanvas.getContext('2d');
+    renderFrame(ctx, elements.layoutLiveCanvas.width, elements.layoutLiveCanvas.height, state.lines, t);
+  }
+  
+  if (document.getElementById('p6')?.classList.contains('active') && elements.boardCanvas) {
+    const ctx = elements.boardCanvas.getContext('2d');
+    renderFrame(ctx, elements.boardCanvas.width, elements.boardCanvas.height, state.lines, t);
+  }
+
+  requestAnimationFrame(animationLoop);
 };
+
+// ─── UTILITIES & NETWORKING ──────────────────────────────────────────────────
 
 const copyURL = () => {
   const url = elements.urlShow?.textContent;
@@ -521,30 +586,193 @@ const saveAndGen = async () => {
   }
 };
 
-const escapeHTML = (text) => {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-};
 
-const buildContentHTML = () => {
-  const activeLines = state.lines.filter((line) => line.text.trim());
-  const { ledCols } = getBoardSpec();
-  return activeLines
-    .map((line) => {
-      const vw = (Math.max(12, line.fontSize) / ledCols) * 100;
-      return `<div style="font-family:${line.fontFamily};font-size:clamp(10px,${vw}vw,${line.fontSize * 3}px);color:${line.color};font-weight:${line.bold ? 700 : 400};font-style:${line.italic ? 'italic' : 'normal'};text-decoration:${line.underline ? 'underline' : 'none'};text-align:${line.align};letter-spacing:${line.letterSpacing}px;line-height:1.05;width:100%;display:block">${escapeHTML(line.text)}</div>`;
-    }).join('');
-};
-
+// ─── STANDALONE HTML GENERATOR (BUNDLES 100% FLUSH ENGINE) ────────────
 const dlHTML = () => {
+  const activeLines = state.lines.filter((line) => line.text.trim());
   const { widthFt, heightFt } = getBoardSpec();
   const aspect = widthFt / heightFt;
-  const contentHTML = buildContentHTML();
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Board ${widthFt}x${heightFt}ft ${state.selectedPitch.code}</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Syne:wght@700;800&family=Oswald:wght@400;700&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:black;overflow:hidden}.b{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);aspect-ratio:${aspect};width:min(100vw,calc(100vh * ${aspect}));background:black;display:flex;flex-direction:column;align-items:stretch;justify-content:center;padding:0;gap:0}</style></head><body><div class="b">${contentHTML}</div></body></html>`;
+  
+  const linesJSON = JSON.stringify(activeLines.map(l => ({
+    text: l.text, color: l.color, fontFamily: l.fontFamily, 
+    bold: l.bold, italic: l.italic, animMode: l.animMode, animSpeed: l.animSpeed
+  })));
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LED Board - Animated Auto-Fit</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Syne:wght@700;800&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: #000000 !important; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; object-fit: fill; }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <script>
+    const lines = ${linesJSON};
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+      canvas.width = 3000;
+      canvas.height = 3000 / ${aspect};
+    }
+    
+    window.addEventListener('resize', resize);
+    resize();
+
+    function renderLoop(time) {
+      const t = time / 1000;
+      const canvasW = canvas.width;
+      const canvasH = canvas.height;
+      
+      ctx.clearRect(0, 0, canvasW, canvasH);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      const sectionHeight = canvasH / lines.length;
+
+      lines.forEach((line, i) => {
+        const targetW = canvasW * 0.96;
+        const targetH = sectionHeight * 0.96;
+
+        let minFont = 10;
+        let maxFont = Math.max(targetW, targetH) * 3;
+        let bestFontSize = minFont;
+        let bestWrappedLines = [line.text];
+        
+        ctx.letterSpacing = "2px";
+        const getFontStr = (size) => \`\${line.bold ? 'bold ' : ''}\${line.italic ? 'italic ' : ''}\${size}px \${line.fontFamily}\`.trim();
+
+        for (let iter = 0; iter < 25; iter++) {
+          let testSize = (minFont + maxFont) / 2;
+          ctx.font = getFontStr(testSize);
+
+          let wordsArr = line.text.split(' ').filter(w => w !== '');
+          if(wordsArr.length === 0) break;
+
+          let wrappedLines = [];
+          let currentLine = wordsArr[0];
+
+          for (let w = 1; w < wordsArr.length; w++) {
+            let word = wordsArr[w];
+            let width = ctx.measureText(currentLine + " " + word).width;
+            if (width <= targetW) {
+                currentLine += " " + word;
+            } else {
+                wrappedLines.push(currentLine);
+                currentLine = word;
+            }
+          }
+          wrappedLines.push(currentLine);
+
+          let lineHeight = testSize * 1.05;
+          let totalHeight = wrappedLines.length * lineHeight;
+          
+          let maxWidth = 0;
+          for (let wl of wrappedLines) {
+              maxWidth = Math.max(maxWidth, ctx.measureText(wl).width);
+          }
+
+          if (totalHeight <= targetH && maxWidth <= targetW) {
+              bestFontSize = testSize;
+              bestWrappedLines = wrappedLines;
+              minFont = testSize;
+          } else {
+              maxFont = testSize;
+          }
+        }
+
+        ctx.font = getFontStr(bestFontSize);
+        const lineHeight = bestFontSize * 1.05;
+        
+        let exactBlockWidth = 0;
+        let blockHeight = 0;
+        
+        bestWrappedLines.forEach((wl) => {
+            const metrics = ctx.measureText(wl);
+            exactBlockWidth = Math.max(exactBlockWidth, metrics.width);
+            const h = (metrics.actualBoundingBoxAscent || (bestFontSize * 0.8)) + (metrics.actualBoundingBoxDescent || (bestFontSize * 0.2));
+            blockHeight += h;
+        });
+
+        blockHeight += (bestWrappedLines.length - 1) * (lineHeight - bestFontSize);
+        if (blockHeight <= 0) blockHeight = 1;
+        if (exactBlockWidth <= 0) exactBlockWidth = 1;
+
+        let scaleX = targetW / exactBlockWidth;
+        let scaleY = targetH / blockHeight;
+
+        let alpha = 1; let drawX = 0; let drawY = 0;
+        const speed = Number(line.animSpeed) || 5;
+        const animMode = line.animMode || 'static';
+
+        if (animMode === 'fade') alpha = (Math.sin(t * speed * 0.5) + 1) / 2;
+        else if (animMode === 'scroll-left') {
+            const travel = canvasW + (exactBlockWidth * scaleX);
+            const duration = travel / (speed * 200);
+            const progress = (t % duration) / duration;
+            drawX = (travel / 2) - (progress * travel);
+        } else if (animMode === 'scroll-right') {
+            const travel = canvasW + (exactBlockWidth * scaleX);
+            const duration = travel / (speed * 200);
+            const progress = (t % duration) / duration;
+            drawX = -(travel / 2) + (progress * travel);
+        } else if (animMode === 'scroll-up') {
+            const travel = sectionHeight + (blockHeight * scaleY);
+            const duration = travel / (speed * 150);
+            const progress = (t % duration) / duration;
+            drawY = (travel / 2) - (progress * travel);
+        } else if (animMode === 'bounce') {
+            scaleX *= 0.70; scaleY *= 0.70;
+            const maxOffsetX = (canvasW / 2) - (exactBlockWidth * scaleX / 2) - (canvasW * 0.05);
+            drawX = Math.sin(t * speed * 0.8) * maxOffsetX; 
+        }
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = line.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (animMode === 'pulse') {
+            const pulse = 1 + 0.1 * Math.sin(t * speed);
+            scaleX *= pulse;
+            scaleY *= pulse;
+        }
+
+        const sectionCenterY = (i * sectionHeight) + (sectionHeight / 2);
+        ctx.translate((canvasW / 2) + drawX, sectionCenterY + drawY);
+        ctx.scale(scaleX, scaleY);
+
+        const totalOpticalHeight = bestWrappedLines.length * lineHeight;
+        const startY = -(totalOpticalHeight / 2) + (lineHeight / 2);
+
+        bestWrappedLines.forEach((wl, lIdx) => {
+             const m = ctx.measureText(wl);
+             const opticalCorrection = m.actualBoundingBoxAscent ? (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2 : 0;
+             ctx.fillText(wl, 0, startY + (lIdx * lineHeight) + opticalCorrection);
+        });
+
+        ctx.restore();
+      });
+
+      requestAnimationFrame(renderLoop);
+    }
+    
+    document.fonts.ready.then(() => requestAnimationFrame(renderLoop));
+  </script>
+</body>
+</html>`;
+
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  link.download = `board_${widthFt}x${heightFt}ft_${state.selectedPitch.code}.html`;
+  link.download = `led_animated_board.html`;
   link.click();
 };
 
@@ -588,17 +816,13 @@ const handleBodyClick = (event) => {
       state.widthFt  = Number(actionTarget.dataset.width);
       state.heightFt = Number(actionTarget.dataset.height);
       syncSizeInputs();
-      livePreview();
+      updateCanvasSizes();
       break;
     case 'download-html':  dlHTML(); break;
     case 'save-and-gen':   saveAndGen(); break;
     case 'copy-url':       copyURL(); break;
     case 'remove-line':    removeLine(Number(actionTarget.dataset.lineId)); break;
     case 'toggle-style':   toggleLineStyle(Number(actionTarget.dataset.lineId), actionTarget.dataset.field); break;
-    case 'set-align':
-      updateLineProperty(Number(actionTarget.dataset.lineId), 'align', actionTarget.dataset.align);
-      renderStyleBlocks();
-      break;
     case 'set-color':
       updateLineProperty(Number(actionTarget.dataset.lineId), 'color', actionTarget.dataset.color);
       renderStyleBlocks();
@@ -618,7 +842,7 @@ const handleStyleInput = (event) => {
   if (!input.matches('.style-input')) return;
   const lineId = Number(input.dataset.lineId);
   const field  = input.dataset.field;
-  const value  = input.type === 'number' ? Number(input.value) : input.value;
+  const value  = input.type === 'number' || input.type === 'range' ? Number(input.value) : input.value;
   updateLineProperty(lineId, field, value);
   renderStyleBlocks();
 };
@@ -632,7 +856,7 @@ const bootFromStoredBoard = async () => {
     const response = await fetch(dataEndpoint);
     if (!response.ok) return;
     const board = await response.json();
-    state.lines    = (board.lines || []).map((line) => ({ id: Date.now() + Math.random(), ...line }));
+    state.lines    = (board.lines || []).map((line) => ({ id: Date.now() + Math.random(), animSpeed: 5, animMode: 'static', ...line }));
     state.widthFt  = Number(board.widthFt)  || DEFAULT_STATE.widthFt;
     state.heightFt = Number(board.heightFt) || DEFAULT_STATE.heightFt;
     for (const [category, configs] of Object.entries(LED_CONFIG)) {
@@ -651,12 +875,10 @@ const init = async () => {
   document.body.addEventListener('click', handleBodyClick);
   elements.linesList?.addEventListener('input', handleLinesInput);
   elements.styleBlocks?.addEventListener('input', handleStyleInput);
-  elements.sw?.addEventListener('input', livePreview);
-  elements.sh?.addEventListener('input', livePreview);
-  window.addEventListener('resize', () => {
-    if (document.getElementById('p5')?.classList.contains('active')) renderLayoutLivePreview();
-    if (document.getElementById('p6')?.classList.contains('active')) renderPreview();
-  });
+  elements.sw?.addEventListener('input', updateCanvasSizes);
+  elements.sh?.addEventListener('input', updateCanvasSizes);
+  window.addEventListener('resize', updateCanvasSizes);
+  
   await bootFromStoredBoard();
   await checkLiveAPI();
   buildPitchGrid();
@@ -665,7 +887,8 @@ const init = async () => {
   renderLines();
   renderStyleBlocks();
   loadRecent();
-  livePreview();
+  
+  requestAnimationFrame(animationLoop);
 };
 
 document.addEventListener('DOMContentLoaded', init);

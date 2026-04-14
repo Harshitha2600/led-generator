@@ -3,10 +3,10 @@
     "id": "default",
     "lines": [
       {
-        "text": "HEEEE",
+        "text": "LEDDISPLAY",
         "fontSize": 80,
         "fontFamily": "'DM Sans',sans-serif",
-        "color": "#00e676",
+        "color": "#ff6b00",
         "bold": true,
         "italic": false,
         "underline": false,
@@ -23,6 +23,6 @@
     "background": "#000000",
     "animation": "scroll",
     "animationSpeed": 4,
-    "updatedAt": "2026-04-13T09:26:43.661Z"
+    "updatedAt": "2026-04-14T05:34:28.918Z"
   }
 }
