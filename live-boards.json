@@ -3,15 +3,15 @@
     "id": "default",
     "lines": [
       {
-        "text": "LEDDISPLAY",
+        "text": "Aje",
         "fontSize": 80,
         "fontFamily": "'DM Sans',sans-serif",
-        "color": "#ff6b00",
+        "color": "#ff4081",
         "bold": true,
         "italic": false,
         "underline": false,
         "align": "center",
-        "letterSpacing": 1
+        "letterSpacing": 2
       }
     ],
     "widthFt": 6,
@@ -23,6 +23,6 @@
     "background": "#000000",
     "animation": "scroll",
     "animationSpeed": 4,
-    "updatedAt": "2026-04-14T05:34:28.918Z"
+    "updatedAt": "2026-04-14T09:02:18.800Z"
   }
 }

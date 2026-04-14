@@ -3,165 +3,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LED Live Display</title>
+  <title>Live LED Display</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&family=Oswald:wght@700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      color-scheme: dark;
+    /* --- 3. Display Settings & 5. Layout --- */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #000000;
+      overflow: hidden; /* Disable scrollbars permanently */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'DM Sans', 'Oswald', Arial, sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
+    #text-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       width: 100%;
       height: 100%;
-      margin: 0;
-      padding: 0;
-      /* Full black background */
-      background-color: #000000 !important; 
-      color: #ffffff;
-      font-family: 'DM Sans', 'Segoe UI', Roboto, Arial, sans-serif;
-      overflow: hidden; 
+      box-sizing: border-box;
+      padding: 4vw; /* Safe padding so text never touches the absolute edge */
     }
 
-    .screen {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #000000;
-    }
-
-    /* The actual LED board fills the whole viewport */
-    .board {
-      background-color: #000000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    .content {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      /* 0.72 to 0.75 tightens the invisible gap above/below standard uppercase fonts */
-      line-height: 0.75; 
-      font-weight: 800;
-      transform-origin: center center;
-      /* Base font size to measure and scale from */
-      font-size: 100px; 
-    }
-
-    .line {
-      white-space: nowrap; 
-      margin: 0;
-      padding: 0;
+    /* --- 1. Fix lowercase visibility --- */
+    #text-display {
+      font-weight: 800; /* Extra Bold */
+      text-align: center;
+      white-space: pre-wrap; /* Respects multi-line text */
+      word-wrap: break-word;
+      
+      /* CRITICAL FIX for letters like 'j', 'g', 'y' */
+      line-height: 1.3; 
+      padding-bottom: 0.15em; 
+      padding-top: 0.15em;
+      overflow: visible; 
+      
+      /* Hardware acceleration hint for smoother rendering on old TVs/LEDs */
+      transform: translateZ(0); 
     }
   </style>
 </head>
 <body>
-  <div class="screen">
-    <div class="board" id="board">
-      <div class="content" id="content">Loading text...</div>
-    </div>
+
+  <div id="text-container">
+    <div id="text-display"></div>
   </div>
 
   <script>
-    const DEFAULT_BOARD = {
-      lines: [{ text: 'WELCOME', color: '#ffffff' }]
-    };
+    const displayEl = document.getElementById('text-display');
+    let currentText = "";
+    let typeTimeout = null;
 
-    const contentEl = document.getElementById('content');
-    const boardEl = document.getElementById('board');
-
-    function getBoardId() {
-      const parts = location.pathname.split('/').filter(Boolean);
-      return parts[1] || 'default';
-    }
-
-    function dataEndpoint() {
-      const id = getBoardId();
-      return id === 'default' ? '/data' : '/data/' + encodeURIComponent(id);
-    }
-
-    function normalizeLine(line) {
-      const text = String(line?.text || '').trim();
-      let color = '#ffffff';
-      if (line?.color && /^#[0-9a-fA-F]{6}$/.test(String(line.color))) {
-        color = String(line.color).toLowerCase();
-      }
-      return { text: text || '', color: color };
-    }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function renderBoard(payload) {
-      const lines = Array.isArray(payload?.lines) && payload.lines.length 
-        ? payload.lines.map(normalizeLine).filter((item) => item.text)
-        : DEFAULT_BOARD.lines;
-
-      contentEl.innerHTML = lines
-        .map((line) => `<div class="line" style="color:${line.color};">${escapeHtml(line.text)}</div>`)
-        .join('');
+    // --- 4. Text Scaling Engine ---
+    function adjustScaling(text) {
+      const charCount = Math.max(text.length, 1);
       
-      adjustLayout();
+      // Estimate optimal VW (Viewport Width) based on character count.
+      // Short words get big text. Long sentences shrink automatically.
+      let optimalVw = 100 / (charCount * 0.55); 
+      
+      // Clamp the values to prevent extreme sizes
+      if (optimalVw > 25) optimalVw = 25; // Maximum width
+      if (optimalVw < 4) optimalVw = 4;   // Minimum width
+      
+      // clamp(min, preferred, max) ensures it never exceeds 30% of the screen height either
+      displayEl.style.fontSize = `clamp(16px, ${optimalVw}vw, 30vh)`;
     }
 
-    function adjustLayout() {
-      const lines = document.querySelectorAll('.line');
-      if (!lines.length) return;
+    // --- 2. Safe Typing Animation Engine ---
+    function typeText(text, index, lastTime) {
+      if (index === 0) {
+        displayEl.textContent = "";
+      }
 
-      // 1. Reset transforms to get natural measurements
-      contentEl.style.transform = 'none';
-
-      // 2. Get exact screen dimensions
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
-
-      // 3. Get the natural width and height of the tight text block
-      const rect = contentEl.getBoundingClientRect();
-      const textW = rect.width || 1;
-      const textH = rect.height || 1;
-
-      // 4. Calculate exact multipliers to stretch it to the edges
-      const scaleX = screenW / textW;
-      const scaleY = screenH / textH;
-
-      // 5. Apply the stretch
-      contentEl.style.transform = `scale(${scaleX}, ${scaleY})`;
-    }
-
-    async function fetchBoard() {
-      try {
-        const response = await fetch(dataEndpoint(), { cache: 'no-store' });
-        if (!response.ok) throw new Error('Fetch failed');
-        const payload = await response.json();
-        renderBoard(payload);
-      } catch (_error) {
-        if (contentEl.textContent === 'Loading text...') {
-           contentEl.innerHTML = '<div class="line" style="color:red;">OFFLINE</div>';
-           adjustLayout();
+      if (index < text.length) {
+        const now = performance.now();
+        
+        // 7. LOW-PERFORMANCE HARDWARE FALLBACK
+        // If the LED processor is lagging (took > 250ms to render the last character), 
+        // we abort the animation and dump the full text instantly to prevent crashing.
+        if (index > 0 && (now - lastTime) > 250) {
+          displayEl.textContent = text;
+          return;
         }
+
+        displayEl.textContent += text.charAt(index);
+        
+        // Simple, non-blocking timeout (100ms per character)
+        typeTimeout = setTimeout(() => {
+          typeText(text, index + 1, performance.now());
+        }, 100);
+        
       }
     }
 
-    window.addEventListener('resize', adjustLayout);
-    setInterval(fetchBoard, 2000);
-    fetchBoard();
+    // --- 6. Data Fetching & Cache Busting ---
+    async function fetchBoardData() {
+      try {
+        // ?t=timestamp forces the browser to bypass cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/data?t=${timestamp}`);
+        
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        // Default fallbacks
+        let newText = "";
+        let color = "#ff6b00"; 
+        let fontFamily = "'DM Sans', sans-serif";
+
+        if (data && data.lines && data.lines.length > 0) {
+          // Combine lines into a single string with line breaks
+          newText = data.lines.map(l => l.text.trim()).filter(Boolean).join('\n');
+          if (data.lines[0].color) color = data.lines[0].color;
+          if (data.lines[0].fontFamily) fontFamily = data.lines[0].fontFamily;
+        }
+
+        // Only trigger an update if the text actually changed
+        if (newText !== currentText && newText !== "") {
+          currentText = newText;
+          
+          displayEl.style.color = color;
+          displayEl.style.fontFamily = fontFamily;
+          
+          // Size the text BEFORE typing starts so the container doesn't jump around
+          adjustScaling(newText);
+          
+          // Clear any currently running animation
+          if (typeTimeout) clearTimeout(typeTimeout);
+          
+          // Start fresh typing effect
+          typeText(newText, 0, performance.now());
+        }
+
+      } catch (error) {
+        console.error("Data fetch error. Retrying next cycle...", error);
+        // If internet drops, the current text simply stays safely on screen.
+      }
+    }
+
+    // Start immediately
+    fetchBoardData();
+
+    // Check for new updates every 3 seconds
+    setInterval(fetchBoardData, 3000);
+    
+    // Auto-recalculate size if the screen is rotated or resized
+    window.addEventListener('resize', () => {
+       if (currentText) adjustScaling(currentText);
+    });
+
   </script>
 </body>
 </html>
